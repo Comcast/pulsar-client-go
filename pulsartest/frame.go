@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/golang/protobuf/proto"
 )
 
 // ==============

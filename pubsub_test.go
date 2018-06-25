@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/golang/protobuf/proto"
 )
 
 func TestPubsub_Subscribe_Success(t *testing.T) {

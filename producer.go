@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/golang/protobuf/proto"
 )
 
 // ErrClosedProducer is returned when attempting to send

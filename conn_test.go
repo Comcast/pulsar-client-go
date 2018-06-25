@@ -26,8 +26,8 @@ import (
 	"testing/iotest"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/golang/protobuf/proto"
 )
 
 // mockReadCloser wraps a io.Reader with a no-op Close method.
@@ -375,19 +375,19 @@ func TestConn_writeFrame(t *testing.T) {
 
 func TestConn_TCP_Read(t *testing.T) {
 	testFrames := map[string]Frame{
-		"ping": Frame{
+		"ping": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PING.Enum(),
 				Ping: &api.CommandPing{},
 			},
 		},
-		"pong": Frame{
+		"pong": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PONG.Enum(),
 				Pong: &api.CommandPong{},
 			},
 		},
-		"message": Frame{
+		"message": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_MESSAGE.Enum(),
 				Message: &api.CommandMessage{
@@ -460,19 +460,19 @@ func TestConn_TCP_Read(t *testing.T) {
 
 func TestConn_TCP_Write(t *testing.T) {
 	testFrames := map[string]Frame{
-		"ping": Frame{
+		"ping": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PING.Enum(),
 				Ping: &api.CommandPing{},
 			},
 		},
-		"pong": Frame{
+		"pong": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PONG.Enum(),
 				Pong: &api.CommandPong{},
 			},
 		},
-		"message": Frame{
+		"message": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_MESSAGE.Enum(),
 				Message: &api.CommandMessage{

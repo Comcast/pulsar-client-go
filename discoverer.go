@@ -18,8 +18,8 @@ package pulsar
 import (
 	"context"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/golang/protobuf/proto"
 )
 
 // newDiscoverer returns a ready-to-use discoverer

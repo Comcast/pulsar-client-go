@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
 	"github.com/Comcast/pulsar-client-go/pulsartest"
+	"github.com/golang/protobuf/proto"
 )
 
 func TestManagedConsumer(t *testing.T) {

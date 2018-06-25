@@ -4,5 +4,5 @@
 # Output of the go coverage tool
 *.out
 
-# ignore any generate certificates
+# ignore any generated certificates
 certs

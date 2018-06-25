@@ -34,15 +34,15 @@ func dispatcherTestCases() map[string]dispatcherTestCase {
 	fd := newFrameDispatcher()
 
 	return map[string]dispatcherTestCase{
-		"global": dispatcherTestCase{
+		"global": {
 			register: fd.registerGlobal,
 			notify:   fd.notifyGlobal,
 		},
-		"prodSeqID": dispatcherTestCase{
+		"prodSeqID": {
 			register: func() (<-chan Frame, func(), error) { return fd.registerProdSeqIDs(1, 2) },
 			notify:   func(f Frame) error { return fd.notifyProdSeqIDs(1, 2, f) },
 		},
-		"reqID": dispatcherTestCase{
+		"reqID": {
 			register: func() (<-chan Frame, func(), error) { return fd.registerReqID(42) },
 			notify:   func(f Frame) error { return fd.notifyReqID(42, f) },
 		},

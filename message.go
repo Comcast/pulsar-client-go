@@ -18,8 +18,8 @@ package pulsar
 import (
 	"bytes"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/golang/protobuf/proto"
 )
 
 // Message represents a received MESSAGE from the Pulsar server.
