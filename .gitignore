@@ -6,3 +6,6 @@
 
 # ignore any generated certificates
 certs
+
+# ignore compiled cli
+cli/cli
