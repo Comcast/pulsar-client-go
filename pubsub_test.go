@@ -48,7 +48,7 @@ func TestPubsub_Subscribe_Success(t *testing.T) {
 
 	go func() {
 		var r response
-		r.c, r.err = tp.subscribe(ctx, "test-topic", "test-subscription", api.CommandSubscribe_Exclusive, 1)
+		r.c, r.err = tp.subscribe(ctx, "test-topic", "test-subscription", api.CommandSubscribe_Exclusive, make(chan Message, 1))
 		resp <- r
 	}()
 
@@ -106,7 +106,7 @@ func TestPubsub_Subscribe_Error(t *testing.T) {
 
 	go func() {
 		var r response
-		r.c, r.err = tp.subscribe(ctx, "test-topic", "test-subscription", api.CommandSubscribe_Exclusive, 1)
+		r.c, r.err = tp.subscribe(ctx, "test-topic", "test-subscription", api.CommandSubscribe_Exclusive, make(chan Message, 1))
 		resp <- r
 	}()
 
