@@ -215,7 +215,7 @@ func (c *Consumer) Messages() <-chan Message {
 	return c.msgs
 }
 
-// RedeliverOverflow sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
+// RedeliverUnacknowledged sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
 // for all messages that have not been acked.
 func (c *Consumer) RedeliverUnacknowledged(ctx context.Context) error {
 	cmd := api.BaseCommand{

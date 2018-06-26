@@ -411,6 +411,9 @@ func TestConn_TCP_Read(t *testing.T) {
 	srvCtx, closeSrv := context.WithCancel(context.Background())
 	defer closeSrv()
 	srv, err := newMockPulsarServer(srvCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Mock server addr: %q", srv.addr)
 
 	// create a conn connected to the mock Pulsar server
@@ -496,6 +499,9 @@ func TestConn_TCP_Write(t *testing.T) {
 	srvCtx, closeSrv := context.WithCancel(context.Background())
 	defer closeSrv()
 	srv, err := newMockPulsarServer(srvCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Mock server addr: %q", srv.addr)
 
 	// create a conn connected to the mock Pulsar server
@@ -557,6 +563,9 @@ func TestConn_TCP_ReadLocalClose(t *testing.T) {
 	srvCtx, closeSrv := context.WithCancel(context.Background())
 	defer closeSrv()
 	srv, err := newMockPulsarServer(srvCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Mock server addr: %q", srv.addr)
 
 	// create a conn connected to the mock Pulsar server
@@ -618,6 +627,9 @@ func TestConn_TCP_ReadRemoteClose(t *testing.T) {
 	srvCtx, closeSrv := context.WithCancel(context.Background())
 	defer closeSrv()
 	srv, err := newMockPulsarServer(srvCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Mock server addr: %q", srv.addr)
 
 	// create a conn connected to the mock Pulsar server
@@ -671,6 +683,9 @@ func TestConn_TCP_SendOnClosed(t *testing.T) {
 	srvCtx, closeSrv := context.WithCancel(context.Background())
 	defer closeSrv()
 	srv, err := newMockPulsarServer(srvCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Mock server addr: %q", srv.addr)
 
 	// create a conn connected to the mock Pulsar server

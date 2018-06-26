@@ -133,8 +133,8 @@ type Server struct {
 
 type topicLookupResp struct {
 	respType               api.CommandLookupTopicResponse_LookupType
-	brokerServiceURL       string
 	proxyThroughServiceURL bool
+	brokerServiceURL       string
 }
 
 // AssertReceived accepts a list of message types. It then compares them to the frames
