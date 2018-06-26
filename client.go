@@ -184,7 +184,7 @@ func (c *Client) Connect(ctx context.Context, proxyBrokerURL string) (*api.Comma
 	return c.connector.connect(ctx, "", proxyBrokerURL)
 }
 
-// Connect sends a Connect message to the Pulsar server, then
+// ConnectTLS sends a Connect message to the Pulsar server, then
 // waits for either a CONNECTED response or the context to
 // timeout. Connect should be called immediately after
 // creating a client, before sending any other messages.

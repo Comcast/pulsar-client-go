@@ -51,7 +51,7 @@ func TestManagedConsumer(t *testing.T) {
 		api.BaseCommand_CONNECT,
 		api.BaseCommand_LOOKUP,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,7 +88,7 @@ func TestManagedConsumer(t *testing.T) {
 		},
 		Payload: payload,
 	}
-	if err := srv.Broadcast(message); err != nil {
+	if err = srv.Broadcast(message); err != nil {
 		t.Fatal(err)
 	}
 
