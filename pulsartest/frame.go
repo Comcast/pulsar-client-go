@@ -143,7 +143,7 @@ func (f *Frame) Decode(r io.Reader) error {
 		return err
 	}
 	f.BaseCmd = new(api.BaseCommand)
-	if err := proto.Unmarshal(cmdBuf, f.BaseCmd); err != nil {
+	if err = proto.Unmarshal(cmdBuf, f.BaseCmd); err != nil {
 		return err
 	}
 
@@ -199,7 +199,7 @@ func (f *Frame) Decode(r io.Reader) error {
 		return err
 	}
 	f.Metadata = new(api.MessageMetadata)
-	if err := proto.Unmarshal(metaBuf, f.Metadata); err != nil {
+	if err = proto.Unmarshal(metaBuf, f.Metadata); err != nil {
 		return err
 	}
 
@@ -284,9 +284,6 @@ func (f *Frame) Encode(w io.Writer) error {
 
 	// write payload
 	buf.Reset(f.Payload)
-	if _, err = io.Copy(w, buf); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = io.Copy(w, buf)
+	return err
 }

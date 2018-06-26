@@ -43,7 +43,7 @@ func TestManagedClientPool(t *testing.T) {
 	expectedFrames := []api.BaseCommand_Type{
 		api.BaseCommand_CONNECT,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 

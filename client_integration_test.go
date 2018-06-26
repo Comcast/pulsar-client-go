@@ -55,7 +55,7 @@ func TestClient_Int_PubSub(t *testing.T) {
 	}
 	t.Logf("CONNECTED: protocol=%d server=%q", connected.GetProtocolVersion(), connected.GetServerVersion())
 
-	if err := c.Ping(ctx); err != nil {
+	if err = c.Ping(ctx); err != nil {
 		t.Fatalf("pinger.ping() err = %v", err)
 	} else {
 		t.Logf("PONG received")
@@ -85,15 +85,14 @@ func TestClient_Int_PubSub(t *testing.T) {
 	subName := randString(16)
 	for i := range consumers {
 		name := fmt.Sprintf("%s-%d", subName, i)
-		cs, err := c.NewExclusiveConsumer(ctx, topic, name, N)
+		consumers[i], err = c.NewExclusiveConsumer(ctx, topic, name, N)
 		if err != nil {
 			t.Fatal(err)
 		}
 		// Notify pulsar server that it can send us N messages
-		if err := cs.Flow(uint32(N)); err != nil {
+		if err = consumers[i].Flow(uint32(N)); err != nil {
 			t.Fatal(err)
 		}
-		consumers[i] = cs
 	}
 
 	// create single producer
@@ -202,7 +201,7 @@ func TestClient_Int_ServerInitiatedTopicClose(t *testing.T) {
 	}
 	t.Logf("CONNECTED: protocol=%d server=%q", connected.GetProtocolVersion(), connected.GetServerVersion())
 
-	if err := c.Ping(ctx); err != nil {
+	if err = c.Ping(ctx); err != nil {
 		t.Fatalf("pinger.ping() err = %v", err)
 	} else {
 		t.Logf("PONG received")
@@ -321,7 +320,7 @@ func TestClient_Int_Unsubscribe(t *testing.T) {
 				}
 				t.Logf("CONNECTED: protocol=%d server=%q", connected.GetProtocolVersion(), connected.GetServerVersion())
 
-				if err := c.Ping(ctx); err != nil {
+				if err = c.Ping(ctx); err != nil {
 					t.Fatalf("pinger.ping() err = %v", err)
 				} else {
 					t.Logf("PONG received")
@@ -394,7 +393,7 @@ func TestClient_Int_RedeliverOverflow(t *testing.T) {
 	}
 	t.Logf("CONNECTED: protocol=%d server=%q", connected.GetProtocolVersion(), connected.GetServerVersion())
 
-	if err := c.Ping(ctx); err != nil {
+	if err = c.Ping(ctx); err != nil {
 		t.Fatalf("pinger.ping() err = %v", err)
 	} else {
 		t.Logf("PONG received")
@@ -526,7 +525,7 @@ func TestClient_Int_RedeliverAll(t *testing.T) {
 	}
 	t.Logf("CONNECTED: protocol=%d server=%q", connected.GetProtocolVersion(), connected.GetServerVersion())
 
-	if err := c.Ping(ctx); err != nil {
+	if err = c.Ping(ctx); err != nil {
 		t.Fatalf("pinger.ping() err = %v", err)
 	} else {
 		t.Logf("PONG received")

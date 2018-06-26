@@ -51,7 +51,7 @@ func TestManagedProducer(t *testing.T) {
 		api.BaseCommand_LOOKUP,
 		api.BaseCommand_PRODUCER,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,7 +108,7 @@ func TestManagedProducer_Redirect(t *testing.T) {
 		api.BaseCommand_CONNECT,
 		api.BaseCommand_LOOKUP,
 	}
-	if err := primarySrv.AssertReceived(ctx, primaryExpectedFrames...); err != nil {
+	if err = primarySrv.AssertReceived(ctx, primaryExpectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,7 +116,7 @@ func TestManagedProducer_Redirect(t *testing.T) {
 		api.BaseCommand_CONNECT,
 		api.BaseCommand_PRODUCER,
 	}
-	if err := topicSrv.AssertReceived(ctx, topicExpectedFrames...); err != nil {
+	if err = topicSrv.AssertReceived(ctx, topicExpectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -168,10 +168,10 @@ func TestManagedProducer_SrvClosed(t *testing.T) {
 		api.BaseCommand_PRODUCER,
 	}
 	for i := 0; i < 3; i++ {
-		if err := srv.CloseAll(); err != nil {
+		if err = srv.CloseAll(); err != nil {
 			t.Fatal(err)
 		}
-		if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+		if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -218,15 +218,15 @@ func TestManagedProducer_ProducerClosed(t *testing.T) {
 	expectedFrames := []api.BaseCommand_Type{
 		api.BaseCommand_CONNECT,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < 3; i++ {
-		expectedFrames := []api.BaseCommand_Type{
+		expectedFrames = []api.BaseCommand_Type{
 			api.BaseCommand_LOOKUP,
 		}
-		if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+		if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -248,7 +248,7 @@ func TestManagedProducer_ProducerClosed(t *testing.T) {
 					},
 				},
 			}
-			if err := srv.Broadcast(closeProducer); err != nil {
+			if err = srv.Broadcast(closeProducer); err != nil {
 				t.Fatal(err)
 			}
 
@@ -261,7 +261,7 @@ func TestManagedProducer_ProducerClosed(t *testing.T) {
 		api.BaseCommand_LOOKUP,
 		api.BaseCommand_PRODUCER,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 

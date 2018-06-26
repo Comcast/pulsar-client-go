@@ -184,7 +184,7 @@ func (c *Client) Connect(ctx context.Context, proxyBrokerURL string) (*api.Comma
 	return c.connector.connect(ctx, "", proxyBrokerURL)
 }
 
-// Connect sends a Connect message to the Pulsar server, then
+// ConnectTLS sends a Connect message to the Pulsar server, then
 // waits for either a CONNECTED response or the context to
 // timeout. Connect should be called immediately after
 // creating a client, before sending any other messages.
@@ -239,7 +239,7 @@ func (c *Client) NewExclusiveConsumer(ctx context.Context, topic, subscriptionNa
 	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Exclusive, queueSize)
 }
 
-// NewExclusiveConsumer creates a new failover consumer capable of reading messages from the
+// NewFailoverConsumer creates a new failover consumer capable of reading messages from the
 // given topic.
 // See "Subscription modes" for more information:
 // https://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#Subscriptionmodes-jdrefl

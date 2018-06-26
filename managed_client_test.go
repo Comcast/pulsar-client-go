@@ -43,7 +43,7 @@ func TestManagedClient(t *testing.T) {
 	expectedFrames := []api.BaseCommand_Type{
 		api.BaseCommand_CONNECT,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -81,10 +81,10 @@ func TestManagedClient_SrvClosed(t *testing.T) {
 		api.BaseCommand_CONNECT,
 	}
 	for i := 0; i < 3; i++ {
-		if err := srv.CloseAll(); err != nil {
+		if err = srv.CloseAll(); err != nil {
 			t.Fatal(err)
 		}
-		if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+		if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -201,7 +201,7 @@ func TestManagedClient_Stop(t *testing.T) {
 	expectedFrames := []api.BaseCommand_Type{
 		api.BaseCommand_CONNECT,
 	}
-	if err := srv.AssertReceived(ctx, expectedFrames...); err != nil {
+	if err = srv.AssertReceived(ctx, expectedFrames...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -216,7 +216,7 @@ func TestManagedClient_Stop(t *testing.T) {
 	default:
 	}
 
-	if err := mc.Stop(); err != nil {
+	if err = mc.Stop(); err != nil {
 		t.Fatal(err)
 	}
 
