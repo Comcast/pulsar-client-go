@@ -63,6 +63,7 @@ func NewManagedConsumer(cp *ManagedClientPool, cfg ManagedConsumerConfig) *Manag
 		clientPool: cp,
 		cfg:        cfg,
 		asyncErrs:  asyncErrors(cfg.Errs),
+		queue:      make(chan Message, cfg.QueueSize),
 		waitc:      make(chan struct{}),
 	}
 
@@ -76,6 +77,8 @@ type ManagedConsumer struct {
 	clientPool *ManagedClientPool
 	cfg        ManagedConsumerConfig
 	asyncErrs  asyncErrors
+
+	queue chan Message
 
 	mu       sync.RWMutex  // protects following
 	consumer *Consumer     // either consumer is nil and wait isn't or vice versa
@@ -168,9 +171,9 @@ func (m *ManagedConsumer) newConsumer(ctx context.Context) (*Consumer, error) {
 
 	// Create the topic consumer. A non-blank consumer name is required.
 	if m.cfg.Exclusive {
-		return client.NewExclusiveConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.cfg.QueueSize)
+		return client.NewExclusiveConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.queue)
 	}
-	return client.NewSharedConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.cfg.QueueSize)
+	return client.NewSharedConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.queue)
 }
 
 // reconnect blocks while a new Consumer is created.

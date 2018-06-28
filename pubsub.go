@@ -48,7 +48,7 @@ type pubsub struct {
 
 // subscribe subscribes to the given topic. The queueSize determines the buffer
 // size of the Consumer.Messages() channel.
-func (t *pubsub) subscribe(ctx context.Context, topic, sub string, subType api.CommandSubscribe_SubType, queueSize int) (*Consumer, error) {
+func (t *pubsub) subscribe(ctx context.Context, topic, sub string, subType api.CommandSubscribe_SubType, queue chan Message) (*Consumer, error) {
 	requestID := t.reqID.next()
 	consumerID := t.consumerID.next()
 
@@ -69,7 +69,7 @@ func (t *pubsub) subscribe(ctx context.Context, topic, sub string, subType api.C
 	}
 	defer cancel()
 
-	c := newConsumer(t.s, t.dispatcher, topic, t.reqID, *consumerID, queueSize)
+	c := newConsumer(t.s, t.dispatcher, topic, t.reqID, *consumerID, queue)
 	// the new subscription needs to be added to the map
 	// before sending the subscribe command, otherwise there'd
 	// be a race between receiving the success result and

@@ -85,7 +85,7 @@ func TestClient_Int_PubSub(t *testing.T) {
 	subName := randString(16)
 	for i := range consumers {
 		name := fmt.Sprintf("%s-%d", subName, i)
-		consumers[i], err = c.NewExclusiveConsumer(ctx, topic, name, N)
+		consumers[i], err = c.NewExclusiveConsumer(ctx, topic, name, make(chan Message, N))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -221,7 +221,7 @@ func TestClient_Int_ServerInitiatedTopicClose(t *testing.T) {
 	t.Log(topicResp.String())
 
 	subscriptionName := randString(32)
-	topicConsumer, err := c.NewExclusiveConsumer(ctx, topic, subscriptionName, 1)
+	topicConsumer, err := c.NewExclusiveConsumer(ctx, topic, subscriptionName, make(chan Message, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +350,7 @@ func TestClient_Int_Unsubscribe(t *testing.T) {
 				}
 				t.Log(topicResp.String())
 
-				topicConsumer, err := c.NewExclusiveConsumer(ctx, topic, randString(32), 1)
+				topicConsumer, err := c.NewExclusiveConsumer(ctx, topic, randString(32), make(chan Message, 1))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -425,7 +425,7 @@ func TestClient_Int_RedeliverOverflow(t *testing.T) {
 	}
 
 	// create single consumer with buffer size 1
-	cs, err := c.NewSharedConsumer(ctx, topic, randString(16), 1)
+	cs, err := c.NewSharedConsumer(ctx, topic, randString(16), make(chan Message, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -557,7 +557,7 @@ func TestClient_Int_RedeliverAll(t *testing.T) {
 	}
 
 	// create single consumer with buffer size N
-	cs, err := c.NewExclusiveConsumer(ctx, topic, randString(16), N)
+	cs, err := c.NewExclusiveConsumer(ctx, topic, randString(16), make(chan Message, N))
 	if err != nil {
 		t.Fatal(err)
 	}

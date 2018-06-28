@@ -227,24 +227,24 @@ func (c *Client) NewProducer(ctx context.Context, topic, producerName string) (*
 // given topic.
 // See "Subscription modes" for more information:
 // https://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#Subscriptionmodes-jdrefl
-func (c *Client) NewSharedConsumer(ctx context.Context, topic, subscriptionName string, queueSize int) (*Consumer, error) {
-	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Shared, queueSize)
+func (c *Client) NewSharedConsumer(ctx context.Context, topic, subscriptionName string, queue chan Message) (*Consumer, error) {
+	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Shared, queue)
 }
 
 // NewExclusiveConsumer creates a new exclusive consumer capable of reading messages from the
 // given topic.
 // See "Subscription modes" for more information:
 // https://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#Subscriptionmodes-jdrefl
-func (c *Client) NewExclusiveConsumer(ctx context.Context, topic, subscriptionName string, queueSize int) (*Consumer, error) {
-	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Exclusive, queueSize)
+func (c *Client) NewExclusiveConsumer(ctx context.Context, topic, subscriptionName string, queue chan Message) (*Consumer, error) {
+	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Exclusive, queue)
 }
 
 // NewFailoverConsumer creates a new failover consumer capable of reading messages from the
 // given topic.
 // See "Subscription modes" for more information:
 // https://pulsar.incubator.apache.org/docs/latest/getting-started/ConceptsAndArchitecture/#Subscriptionmodes-jdrefl
-func (c *Client) NewFailoverConsumer(ctx context.Context, topic, subscriptionName string, queueSize int) (*Consumer, error) {
-	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Failover, queueSize)
+func (c *Client) NewFailoverConsumer(ctx context.Context, topic, subscriptionName string, queue chan Message) (*Consumer, error) {
+	return c.pubsub.subscribe(ctx, topic, subscriptionName, api.CommandSubscribe_Failover, queue)
 }
 
 // handleFrame is called by the underlaying conn with

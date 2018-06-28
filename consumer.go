@@ -31,15 +31,16 @@ const maxRedeliverUnacknowledged = 1000
 
 // newConsumer returns a ready-to-use consumer.
 // A consumer is used to attach to a subscription and
-// consume messages from it.
-func newConsumer(s cmdSender, dispatcher *frameDispatcher, topic string, reqID *monotonicID, consumerID uint64, queueSize int) *Consumer {
+// consumes messages from it. The provided channel is sent
+// all messages the consumer receives.
+func newConsumer(s cmdSender, dispatcher *frameDispatcher, topic string, reqID *monotonicID, consumerID uint64, queue chan Message) *Consumer {
 	return &Consumer{
 		s:           s,
 		topic:       topic,
 		consumerID:  consumerID,
 		reqID:       reqID,
 		dispatcher:  dispatcher,
-		msgs:        make(chan Message, queueSize),
+		queue:       queue,
 		closedc:     make(chan struct{}),
 		endOfTopicc: make(chan struct{}),
 	}
@@ -56,7 +57,7 @@ type Consumer struct {
 
 	dispatcher *frameDispatcher // handles request/response state
 
-	msgs chan Message
+	queue chan Message
 
 	omu      sync.Mutex           // protects following
 	overflow []*api.MessageIdData // IDs of messages that were dropped because of full buffer
@@ -212,7 +213,7 @@ func (c *Consumer) handleReachedEndOfTopic(f Frame) error {
 // Messages returns a read-only channel that callers
 // should read from until the subscription is closed.
 func (c *Consumer) Messages() <-chan Message {
-	return c.msgs
+	return c.queue
 }
 
 // RedeliverUnacknowledged sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
@@ -291,7 +292,7 @@ func (c *Consumer) handleMessage(f Frame) error {
 	}
 
 	select {
-	case c.msgs <- m:
+	case c.queue <- m:
 		return nil
 
 	default:
@@ -311,6 +312,6 @@ func (c *Consumer) handleMessage(f Frame) error {
 		}
 		c.omu.Unlock()
 
-		return fmt.Errorf("consumer message queue on topic %q is full (capacity = %d)", c.topic, cap(c.msgs))
+		return fmt.Errorf("consumer message queue on topic %q is full (capacity = %d)", c.topic, cap(c.queue))
 	}
 }
