@@ -24,6 +24,7 @@ import (
 
 // Message represents a received MESSAGE from the Pulsar server.
 type Message struct {
+	Topic      string
 	consumerID uint64
 
 	Msg     *api.CommandMessage

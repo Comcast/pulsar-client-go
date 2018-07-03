@@ -304,6 +304,7 @@ func (c *Consumer) RedeliverOverflow(ctx context.Context) (int, error) {
 // this consumer.
 func (c *Consumer) handleMessage(f Frame) error {
 	m := Message{
+		Topic:      c.topic,
 		consumerID: c.consumerID,
 		Msg:        f.BaseCmd.GetMessage(),
 		Meta:       f.Metadata,
