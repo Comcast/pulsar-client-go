@@ -47,6 +47,7 @@ func (m ManagedConsumerConfig) setDefaults() ManagedConsumerConfig {
 	if m.MaxReconnectDelay <= 0 {
 		m.MaxReconnectDelay = 5 * time.Minute
 	}
+	// unbuffered queue not allowed
 	if m.QueueSize <= 0 {
 		m.QueueSize = 128
 	}
@@ -156,8 +157,27 @@ func (m *ManagedConsumer) Receive(ctx context.Context) (Message, error) {
 // consumer and sends them to the provided channel. It manages flow control internally based
 // on the queue size.
 func (m *ManagedConsumer) ReceiveAsync(ctx context.Context, msgs chan<- Message) error {
+	// send flow request after 1/2 of the queue
+	// has been consumed
+	highwater := uint32(cap(m.queue)) / 2
+
+	drain := func() {
+		for {
+			select {
+			case msg := <-m.queue:
+				msgs <- msg
+			default:
+				return
+			}
+		}
+	}
+
 CONSUMER:
 	for {
+		// ensure that the message queue is empty
+		drain()
+
+		// gain lock on consumer
 		m.mu.RLock()
 		consumer := m.consumer
 		wait := m.waitc
@@ -177,19 +197,13 @@ CONSUMER:
 		// TODO: determine when, if ever, to call
 		// consumer.RedeliverOverflow
 
-		permits := uint32(cap(m.queue) - len(m.queue))
-		if permits <= 0 {
-			permits = 1
-		}
-		if err := consumer.Flow(permits); err != nil {
+		// request half the buffer's capacity
+		if err := consumer.Flow(highwater); err != nil {
 			m.asyncErrs.send(err)
 			continue CONSUMER
 		}
 
 		var receivedSinceFlow uint32
-		// send flow request after 1/2 of the queue
-		// has been consumed
-		highwater := uint32(cap(m.queue)) / 2
 
 		for {
 			select {

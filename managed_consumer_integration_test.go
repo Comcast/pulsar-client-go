@@ -24,7 +24,7 @@ import (
 
 func TestManagedConsumer_Int_ReceiveAsync(t *testing.T) {
 	// context for remainder of test
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	asyncErrs := make(chan error, 8)
@@ -104,6 +104,9 @@ MSGS:
 		case err := <-errs:
 			// either a consumer or producer error occurred
 			t.Fatal(err)
+
+		case <-ctx.Done():
+			t.Fatalf("%v. Received %d messages", ctx.Err(), len(got))
 		}
 	}
 
@@ -121,7 +124,7 @@ EXPECTED:
 
 func TestManagedConsumer_Int_ReceiveAsync_Multiple(t *testing.T) {
 	// context for remainder of test
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	asyncErrs := make(chan error, 8)
@@ -210,6 +213,9 @@ MSGS:
 		case err := <-errs:
 			// either a consumer or producer error occurred
 			t.Fatal(err)
+
+		case <-ctx.Done():
+			t.Fatalf("%v. Received %d messages", ctx.Err(), len(got))
 		}
 	}
 
