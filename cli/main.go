@@ -42,7 +42,6 @@ var args = struct {
 	message     string
 	messageRate time.Duration
 	shared      bool
-	autoACK     bool
 }{
 	pulsar:      "localhost:6650",
 	tlsCert:     "",
@@ -53,7 +52,6 @@ var args = struct {
 	message:     "hola mundo",
 	messageRate: time.Second,
 	shared:      false,
-	autoACK:     true,
 }
 
 func main() {
@@ -66,7 +64,6 @@ func main() {
 	flag.StringVar(&args.message, "message", args.message, "message to send when producing (with %03d $messageNumber tacked on the front)")
 	flag.DurationVar(&args.messageRate, "rate", args.messageRate, "rate at which to send messages")
 	flag.BoolVar(&args.shared, "shared", args.shared, "if true, consumer is shared, otherwise exclusive")
-	flag.BoolVar(&args.autoACK, "auto-ack", args.autoACK, "if true, consumed messages are automatically ACK'd. Otherwise, they're ACK'd after hitting ENTER")
 	flag.Parse()
 
 	asyncErrs := make(chan error, 8)
@@ -153,6 +150,7 @@ func main() {
 
 		mc := pulsar.NewManagedConsumer(mcp, mcCfg)
 		go mc.ReceiveAsync(ctx, queue)
+		fmt.Printf("Created consumer %q on topic %q...\n", args.name, args.topic)
 
 		for {
 			select {
