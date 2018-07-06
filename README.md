@@ -3,7 +3,7 @@ pulsar-client-go
 
 A Go client library for the [Apache Pulsar](https://pulsar.incubator.apache.org/) project.
 
-![GoDoc](https://godoc.org/github.com/Comcast/pulsar-client-go?status.svg)](https://godoc.org/github.com/Comcast/pulsar-client-go)
+[![GoDoc](https://godoc.org/github.com/Comcast/pulsar-client-go?status.svg)](https://godoc.org/github.com/Comcast/pulsar-client-go)
 
 ## Alternatives
 
