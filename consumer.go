@@ -69,11 +69,37 @@ type Consumer struct {
 	endOfTopicc  chan struct{}
 }
 
+// Messages returns a read-only channel of messages
+// received by the consumer. The channel will never be
+// closed by the consumer.
+func (c *Consumer) Messages() <-chan Message {
+	return c.queue
+}
+
+// Ack is used to signal to the broker that a given message has been
+// successfully processed by the application and can be discarded by the broker.
+func (c *Consumer) Ack(msg Message) error {
+	cmd := api.BaseCommand{
+		Type: api.BaseCommand_ACK.Enum(),
+		Ack: &api.CommandAck{
+			ConsumerId: proto.Uint64(c.consumerID),
+			MessageId:  msg.Msg.GetMessageId(),
+			AckType:    api.CommandAck_Individual.Enum(),
+		},
+	}
+
+	return c.s.sendSimpleCmd(cmd)
+}
+
 // Flow command gives additional permits to send messages to the consumer.
 // A typical consumer implementation will use a queue to accumulate these messages
 // before the application is ready to consume them. After the consumer is ready,
 // the client needs to give permission to the broker to push messages.
 func (c *Consumer) Flow(permits uint32) error {
+	if permits <= 0 {
+		return fmt.Errorf("invalid number of permits requested: %d", permits)
+	}
+
 	cmd := api.BaseCommand{
 		Type: api.BaseCommand_FLOW.Enum(),
 		Flow: &api.CommandFlow{
@@ -210,12 +236,6 @@ func (c *Consumer) handleReachedEndOfTopic(f Frame) error {
 	return nil
 }
 
-// Messages returns a read-only channel that callers
-// should read from until the subscription is closed.
-func (c *Consumer) Messages() <-chan Message {
-	return c.queue
-}
-
 // RedeliverUnacknowledged sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
 // for all messages that have not been acked.
 func (c *Consumer) RedeliverUnacknowledged(ctx context.Context) error {
@@ -284,7 +304,7 @@ func (c *Consumer) RedeliverOverflow(ctx context.Context) (int, error) {
 // this consumer.
 func (c *Consumer) handleMessage(f Frame) error {
 	m := Message{
-		s:          c.s,
+		Topic:      c.topic,
 		consumerID: c.consumerID,
 		Msg:        f.BaseCmd.GetMessage(),
 		Meta:       f.Metadata,
@@ -298,8 +318,8 @@ func (c *Consumer) handleMessage(f Frame) error {
 	default:
 		// Add messageId to overflow buffer, avoiding duplicates.
 		newMid := f.BaseCmd.GetMessage().GetMessageId()
-		var dup bool
 
+		var dup bool
 		c.omu.Lock()
 		for _, mid := range c.overflow {
 			if proto.Equal(mid, newMid) {

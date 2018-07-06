@@ -47,6 +47,7 @@ func (m ManagedConsumerConfig) setDefaults() ManagedConsumerConfig {
 	if m.MaxReconnectDelay <= 0 {
 		m.MaxReconnectDelay = 5 * time.Minute
 	}
+	// unbuffered queue not allowed
 	if m.QueueSize <= 0 {
 		m.QueueSize = 128
 	}
@@ -85,6 +86,29 @@ type ManagedConsumer struct {
 	waitc    chan struct{} // if consumer is nil, this will unblock when it's been re-set
 }
 
+// Ack acquires a consumer and sends an ACK message for the given message.
+func (m *ManagedConsumer) Ack(ctx context.Context, msg Message) error {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
+		return consumer.Ack(msg)
+	}
+}
+
 // Receive returns a single Message, if available.
 // A reasonable context should be provided that will be used
 // to wait for an incoming message if none are available.
@@ -114,14 +138,98 @@ func (m *ManagedConsumer) Receive(ctx context.Context) (Message, error) {
 		}
 
 		select {
-		case m := <-consumer.Messages():
-			return m, nil
+		case msg := <-m.queue:
+			return msg, nil
+
 		case <-ctx.Done():
 			return Message{}, ctx.Err()
+
 		case <-consumer.Closed():
 			return Message{}, errors.New("consumer closed")
+
 		case <-consumer.ConnClosed():
 			return Message{}, errors.New("consumer connection closed")
+		}
+	}
+}
+
+// ReceiveAsync blocks until the context is done. It continuously reads messages from the
+// consumer and sends them to the provided channel. It manages flow control internally based
+// on the queue size.
+func (m *ManagedConsumer) ReceiveAsync(ctx context.Context, msgs chan<- Message) error {
+	// send flow request after 1/2 of the queue
+	// has been consumed
+	highwater := uint32(cap(m.queue)) / 2
+
+	drain := func() {
+		for {
+			select {
+			case msg := <-m.queue:
+				msgs <- msg
+			default:
+				return
+			}
+		}
+	}
+
+CONSUMER:
+	for {
+		// ensure that the message queue is empty
+		drain()
+
+		// gain lock on consumer
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
+		// TODO: determine when, if ever, to call
+		// consumer.RedeliverOverflow
+
+		// request half the buffer's capacity
+		if err := consumer.Flow(highwater); err != nil {
+			m.asyncErrs.send(err)
+			continue CONSUMER
+		}
+
+		var receivedSinceFlow uint32
+
+		for {
+			select {
+			case msg := <-m.queue:
+				msgs <- msg
+
+				if receivedSinceFlow++; receivedSinceFlow >= highwater {
+					if err := consumer.Flow(receivedSinceFlow); err != nil {
+						m.asyncErrs.send(err)
+						continue CONSUMER
+					}
+					receivedSinceFlow = 0
+				}
+				continue
+
+			case <-ctx.Done():
+				return ctx.Err()
+
+			case <-consumer.Closed():
+				m.asyncErrs.send(errors.New("consumer closed"))
+				continue CONSUMER
+
+			case <-consumer.ConnClosed():
+				m.asyncErrs.send(errors.New("consumer connection closed"))
+				continue CONSUMER
+			}
 		}
 	}
 }

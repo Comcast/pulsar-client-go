@@ -138,7 +138,7 @@ func TestClient_Int_PubSub(t *testing.T) {
 						t.Fatal("consumer unexpectedly reached end of topic")
 
 					case msg := <-cs.Messages():
-						if err := msg.Ack(); err != nil {
+						if err := cs.Ack(msg); err != nil {
 							t.Fatal(err)
 						}
 						gotMsgs = append(gotMsgs, string(msg.Payload))
@@ -458,7 +458,7 @@ func TestClient_Int_RedeliverOverflow(t *testing.T) {
 			t.Fatal("consumer unexpectedly reached end of topic")
 
 		case msg := <-cs.Messages():
-			if err := msg.Ack(); err != nil {
+			if err := cs.Ack(msg); err != nil {
 				t.Fatal(err)
 			}
 			gotMsgs = append(gotMsgs, string(msg.Payload[:]))

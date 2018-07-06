@@ -33,27 +33,27 @@ import (
 )
 
 var args = struct {
-	pulsar    string
-	tlsCert   string
-	tlsKey    string
-	name      string
-	topic     string
-	producer  bool
-	message   string
-	shared    bool
-	autoACK   bool
-	decodeJob bool
+	pulsar      string
+	tlsCert     string
+	tlsKey      string
+	name        string
+	topic       string
+	producer    bool
+	message     string
+	messageRate time.Duration
+	shared      bool
+	autoACK     bool
 }{
-	pulsar:    "localhost:6650",
-	tlsCert:   "",
-	tlsKey:    "",
-	name:      "demo",
-	topic:     "persistent://sample/standalone/ns1/demo",
-	producer:  false,
-	message:   "hola mundo",
-	shared:    false,
-	autoACK:   true,
-	decodeJob: false,
+	pulsar:      "localhost:6650",
+	tlsCert:     "",
+	tlsKey:      "",
+	name:        "demo",
+	topic:       "persistent://sample/standalone/ns1/demo",
+	producer:    false,
+	message:     "hola mundo",
+	messageRate: time.Second,
+	shared:      false,
+	autoACK:     true,
 }
 
 func main() {
@@ -64,9 +64,9 @@ func main() {
 	flag.StringVar(&args.topic, "topic", args.topic, "producer/consumer topic")
 	flag.BoolVar(&args.producer, "producer", args.producer, "if true, produce messages, otherwise consume")
 	flag.StringVar(&args.message, "message", args.message, "message to send when producing (with %03d $messageNumber tacked on the front)")
+	flag.DurationVar(&args.messageRate, "rate", args.messageRate, "rate at which to send messages")
 	flag.BoolVar(&args.shared, "shared", args.shared, "if true, consumer is shared, otherwise exclusive")
 	flag.BoolVar(&args.autoACK, "auto-ack", args.autoACK, "if true, consumed messages are automatically ACK'd. Otherwise, they're ACK'd after hitting ENTER")
-	flag.BoolVar(&args.decodeJob, "job", args.decodeJob, "if true, consumed messages are decoded from Job protobuf format. Otherwise, they're printed as-is to STDOUT")
 	flag.Parse()
 
 	asyncErrs := make(chan error, 8)
@@ -108,7 +108,7 @@ func main() {
 		mp := pulsar.NewManagedProducer(mcp, mpCfg)
 		fmt.Printf("Created producer on topic %q...\n", args.topic)
 
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(args.messageRate)
 		defer ticker.Stop()
 
 		var i int
@@ -116,7 +116,8 @@ func main() {
 			select {
 			case <-ticker.C:
 				sctx, cancel := context.WithTimeout(ctx, time.Second)
-				_, err := mp.Send(sctx, []byte(fmt.Sprintf("%03d %s", i, args.message)))
+				payload := fmt.Sprintf("%03d %s", i, args.message)
+				_, err := mp.Send(sctx, []byte(payload))
 				cancel()
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
@@ -130,6 +131,8 @@ func main() {
 		}
 
 	case false:
+		queue := make(chan pulsar.Message, 8)
+
 		// Create managed consumer
 		mcCfg := pulsar.ManagedConsumerConfig{
 			Name:                  args.name,
@@ -147,24 +150,20 @@ func main() {
 				},
 			},
 		}
+
 		mc := pulsar.NewManagedConsumer(mcp, mcCfg)
+		go mc.ReceiveAsync(ctx, queue)
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			default:
-			}
 
-			msg, err := mc.Receive(ctx)
-
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				continue
-			}
-			fmt.Println(string(msg.Payload))
-			if err := msg.Ack(); err != nil {
-				fmt.Fprintln(os.Stderr, err)
+			case msg := <-queue:
+				fmt.Println(string(msg.Payload))
+				if err := mc.Ack(ctx, msg); err != nil {
+					fmt.Fprintf(os.Stderr, "error acking message: %v", err)
+				}
 			}
 		}
 	}

@@ -24,28 +24,12 @@ import (
 
 // Message represents a received MESSAGE from the Pulsar server.
 type Message struct {
-	s cmdSender
-
+	Topic      string
 	consumerID uint64
 
 	Msg     *api.CommandMessage
 	Meta    *api.MessageMetadata
 	Payload []byte
-}
-
-// Ack is used to signal to the broker that a given message has been
-// successfully processed by the application and can be discarded by the broker.
-func (m *Message) Ack() error {
-	cmd := api.BaseCommand{
-		Type: api.BaseCommand_ACK.Enum(),
-		Ack: &api.CommandAck{
-			ConsumerId: proto.Uint64(m.consumerID),
-			MessageId:  m.Msg.GetMessageId(),
-			AckType:    api.CommandAck_Individual.Enum(),
-		},
-	}
-
-	return m.s.sendSimpleCmd(cmd)
 }
 
 // Equal returns true if the provided other Message
