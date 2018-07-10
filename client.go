@@ -47,14 +47,8 @@ type ClientConfig struct {
 	Addr        string        // pulsar broker address. May start with pulsar://
 	phyAddr     string        // if set, the TCP connection should be made using this address. This is only ever set during Topic Lookup
 	DialTimeout time.Duration // timeout to use when establishing TCP connection
-	TLSCertFile string        // path to TLS certificate. May be blank, in which case TLS will not be used
-	TLSKeyFile  string        // path to TLS key. May be blank, in which case TLS will not be used
+	TLSConfig   *TLSConfig    // TLS certificate configuration. May be nil, in which case TLS will not be used
 	Errs        chan<- error  // asynchronous errors will be sent here. May be nil
-}
-
-// tls returns true if a TLS connection should be used
-func (c ClientConfig) tls() bool {
-	return c.TLSCertFile != "" && c.TLSKeyFile != ""
 }
 
 // connAddr returns the address that should be used
@@ -84,8 +78,8 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	var cnx *conn
 	var err error
 
-	if cfg.tls() {
-		cnx, err = newTLSConn(cfg.connAddr(), cfg.TLSCertFile, cfg.TLSKeyFile, cfg.DialTimeout)
+	if cfg.TLSConfig != nil {
+		cnx, err = newTLSConn(cfg.connAddr(), *cfg.TLSConfig, cfg.DialTimeout)
 	} else {
 		cnx, err = newTCPConn(cfg.connAddr(), cfg.DialTimeout)
 	}
