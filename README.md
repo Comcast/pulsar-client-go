@@ -8,7 +8,7 @@ A Go client library for the [Apache Pulsar](https://pulsar.incubator.apache.org/
 ## Alternatives
 
 The Pulsar project contains a [Go client library](https://pulsar.incubator.apache.org/docs/latest/clients/go/).
-It is a wrapper for the C++ Go client library, whereas this library is 100% Go (no cgo required).
+It is a wrapper for the C++ client library, whereas this library is 100% Go (no cgo required).
 
 ## Status
 
