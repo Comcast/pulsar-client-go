@@ -1,19 +1,47 @@
-go-pulsar
+pulsar-client-go
 =========
 
-This is a Go client library for the [Apache Pulsar](https://pulsar.incubator.apache.org/) project.
+A Go client library for the [Apache Pulsar](https://pulsar.incubator.apache.org/) project.
 
-## TODO
+[![GoDoc](https://godoc.org/github.com/Comcast/pulsar-client-go?status.svg)](https://godoc.org/github.com/Comcast/pulsar-client-go)
 
-This client is a work-in-progress and does not support all Pulsar features. The following is an incomplete list of lacking features:
+## Alternatives
 
-* Handle batch frames
-* Support partitioned topics
+The Pulsar project contains a [Go client library](https://pulsar.incubator.apache.org/docs/latest/clients/go/).
+It is a wrapper for the C++ Go client library, whereas this library is 100% Go (no cgo required).
+
+## Status
+
+This client is a work-in-progress and as such does not support all Pulsar features. It supports `v1.22` of Pulsar.
+
+The following is an incomplete list of features that are not yet implemented:
+
+* Batch frame support
+* Payload compression support
+* Partitioned topics support
+* Athenz authentication support
+* Encryption support
+
+## Installation
+
+```shell
+go get -u github.com/Comcast/pulsar-client-go
+```
+
+_Note: The package name is `pulsar`_
+
+## Usage
+
+An example of a producer and consumer can be seen in the included [cli](https://github.com/Comcast/pulsar-client-go/blob/master/cli/main.go) application.
+
+## Contributions
+
+Contributions are welcome. Please create an issue before beginning work on major contributions. Refer to the [CONTRIBUTING.md](/CONTRIBUTING.md) doc for more information.
 
 ## Integration Tests
 
 Integration tests are provided that connect to a Pulsar sever.
-They are best run against a local instance of Pulsar.
+They are best run against a local instance of Pulsar, since they expect the standalone properties to exist.
 See below for instructions on installing Pulsar locally.
 
 Integration tests will be run when provided the `pulsar` flag with the address of the Pulsar server to connect to. Example:

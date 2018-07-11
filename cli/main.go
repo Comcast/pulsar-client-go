@@ -22,6 +22,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"os"
@@ -33,40 +34,40 @@ import (
 )
 
 var args = struct {
-	pulsar      string
-	tlsCert     string
-	tlsKey      string
-	name        string
-	topic       string
-	producer    bool
-	message     string
-	messageRate time.Duration
-	shared      bool
-	autoACK     bool
+	pulsar        string
+	tlsCert       string
+	tlsKey        string
+	tlsSkipVerify bool
+	name          string
+	topic         string
+	producer      bool
+	message       string
+	messageRate   time.Duration
+	shared        bool
 }{
-	pulsar:      "localhost:6650",
-	tlsCert:     "",
-	tlsKey:      "",
-	name:        "demo",
-	topic:       "persistent://sample/standalone/ns1/demo",
-	producer:    false,
-	message:     "hola mundo",
-	messageRate: time.Second,
-	shared:      false,
-	autoACK:     true,
+	pulsar:        "localhost:6650",
+	tlsCert:       "",
+	tlsKey:        "",
+	tlsSkipVerify: false,
+	name:          "demo",
+	topic:         "persistent://sample/standalone/ns1/demo",
+	producer:      false,
+	message:       "hola mundo",
+	messageRate:   time.Second,
+	shared:        false,
 }
 
 func main() {
 	flag.StringVar(&args.pulsar, "pulsar", args.pulsar, "pulsar address")
 	flag.StringVar(&args.tlsCert, "tls-cert", args.tlsCert, "(optional) path to TLS certificate")
 	flag.StringVar(&args.tlsKey, "tls-key", args.tlsKey, "(optional) path to TLS key")
+	flag.BoolVar(&args.tlsSkipVerify, "tls-insecure", args.tlsSkipVerify, "ignore invalid server certificates")
 	flag.StringVar(&args.name, "name", args.name, "producer/consumer name")
 	flag.StringVar(&args.topic, "topic", args.topic, "producer/consumer topic")
 	flag.BoolVar(&args.producer, "producer", args.producer, "if true, produce messages, otherwise consume")
 	flag.StringVar(&args.message, "message", args.message, "message to send when producing (with %03d $messageNumber tacked on the front)")
 	flag.DurationVar(&args.messageRate, "rate", args.messageRate, "rate at which to send messages")
 	flag.BoolVar(&args.shared, "shared", args.shared, "if true, consumer is shared, otherwise exclusive")
-	flag.BoolVar(&args.autoACK, "auto-ack", args.autoACK, "if true, consumed messages are automatically ACK'd. Otherwise, they're ACK'd after hitting ENTER")
 	flag.Parse()
 
 	asyncErrs := make(chan error, 8)
@@ -85,6 +86,19 @@ func main() {
 		cancel()
 	}()
 
+	var tlsCfg *pulsar.TLSConfig
+	if args.tlsCert != "" && args.tlsKey != "" {
+		tlsCfg = &pulsar.TLSConfig{
+			SkipVerify: args.tlsSkipVerify,
+		}
+		var err error
+		tlsCfg.Certificate, err = tls.LoadX509KeyPair(args.tlsCert, args.tlsKey)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error loading certificates:", err)
+			os.Exit(1)
+		}
+	}
+
 	mcp := pulsar.NewManagedClientPool()
 
 	switch args.producer {
@@ -98,10 +112,9 @@ func main() {
 			MaxReconnectDelay:     time.Minute,
 			ManagedClientConfig: pulsar.ManagedClientConfig{
 				ClientConfig: pulsar.ClientConfig{
-					Addr:        args.pulsar,
-					TLSCertFile: args.tlsCert,
-					TLSKeyFile:  args.tlsKey,
-					Errs:        asyncErrs,
+					Addr:      args.pulsar,
+					TLSConfig: tlsCfg,
+					Errs:      asyncErrs,
 				},
 			},
 		}
@@ -143,16 +156,16 @@ func main() {
 			MaxReconnectDelay:     time.Minute,
 			ManagedClientConfig: pulsar.ManagedClientConfig{
 				ClientConfig: pulsar.ClientConfig{
-					Addr:        args.pulsar,
-					TLSCertFile: args.tlsCert,
-					TLSKeyFile:  args.tlsKey,
-					Errs:        asyncErrs,
+					Addr:      args.pulsar,
+					TLSConfig: tlsCfg,
+					Errs:      asyncErrs,
 				},
 			},
 		}
 
 		mc := pulsar.NewManagedConsumer(mcp, mcCfg)
 		go mc.ReceiveAsync(ctx, queue)
+		fmt.Printf("Created consumer %q on topic %q...\n", args.name, args.topic)
 
 		for {
 			select {

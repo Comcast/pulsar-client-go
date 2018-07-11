@@ -44,8 +44,7 @@ type clientPoolKey struct {
 	logicalAddr string
 	phyAddr     string
 	dialTimeout time.Duration
-	tlsCertFile string
-	tlsKeyFile  string
+	tls         bool
 
 	pingFrequency         time.Duration
 	pingTimeout           time.Duration
@@ -61,8 +60,7 @@ func (m *ManagedClientPool) Get(cfg ManagedClientConfig) *ManagedClient {
 	key := clientPoolKey{
 		logicalAddr:           strings.TrimPrefix(cfg.Addr, "pulsar://"),
 		dialTimeout:           cfg.DialTimeout,
-		tlsCertFile:           cfg.TLSCertFile,
-		tlsKeyFile:            cfg.TLSKeyFile,
+		tls:                   cfg.TLSConfig != nil,
 		pingFrequency:         cfg.PingFrequency,
 		pingTimeout:           cfg.PingTimeout,
 		connectTimeout:        cfg.ConnectTimeout,
@@ -143,7 +141,7 @@ func (m *ManagedClientPool) ForTopic(ctx context.Context, cfg ManagedClientConfi
 
 		// Update configured address with address
 		// provided in response
-		if cfg.tls() {
+		if cfg.TLSConfig != nil {
 			cfg.Addr = lookupResp.GetBrokerServiceUrlTls()
 		} else {
 			cfg.Addr = lookupResp.GetBrokerServiceUrl()
