@@ -22,6 +22,8 @@ Usage of ./cli:
     	if true, consumer is shared, otherwise exclusive
   -tls-cert string
     	(optional) path to TLS certificate
+  -tls-insecure
+    	ignore invalid server certificates
   -tls-key string
     	(optional) path to TLS key
   -topic string
