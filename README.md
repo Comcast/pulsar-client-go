@@ -7,10 +7,13 @@ A Go client library for the [Apache Pulsar](https://pulsar.incubator.apache.org/
 
 ## Alternatives
 
-The Pulsar project contains a [Go client library](https://pulsar.incubator.apache.org/docs/latest/clients/go/).
-It is a wrapper for the C++ client library, whereas this library is 100% Go (no cgo required).
+The Pulsar project contains a [Go client library](https://pulsar.incubator.apache.org/docs/latest/clients/go/) that is a wrapper for the Pulsar C++ client library.
 
-## Status
+In comparison, this library is 100% Go (no cgo required). Outside the Go standard library, it has a single dependency on the [`golang/protbuf`](/Gopkg.toml) library.
+
+## Status & Goals
+
+**Status**
 
 This client is a work-in-progress and as such does not support all Pulsar features. It supports `v1.22` of Pulsar.
 
@@ -21,6 +24,12 @@ The following is an incomplete list of features that are not yet implemented:
 * Partitioned topics support
 * Athenz authentication support
 * Encryption support
+* Pulsar `2.x` support
+
+**Goals**
+
+* 100% Go
+* Simplicity
 
 ## Installation
 
@@ -30,13 +39,15 @@ go get -u github.com/Comcast/pulsar-client-go
 
 _Note: The package name is `pulsar`_
 
-## Usage
+## Example
 
 An example of a producer and consumer can be seen in the included [cli](https://github.com/Comcast/pulsar-client-go/blob/master/cli/main.go) application.
 
 ## Contributions
 
 Contributions are welcome. Please create an issue before beginning work on major contributions. Refer to the [CONTRIBUTING.md](/CONTRIBUTING.md) doc for more information.
+
+# Local Development
 
 ## Integration Tests
 
@@ -122,6 +133,6 @@ The `Makefile` has various targets to support certificate generation, Pulsar TLS
 
 	This will create a `sample/standalone/ns1` topic. The `app` certificate will have `produce`, `consume` rights on the topic.
 
-## License
+# License
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
