@@ -1,4 +1,20 @@
+/**
+* Copyright 2018 Comcast Cable Communications Management, LLC
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+ */
+
 // +build gofuzz
+
 package pulsar
 
 import (
@@ -23,8 +39,23 @@ func Fuzz(data []byte) int {
 	if err := f.Encode(&b); err != nil {
 		panic(err)
 	}
-	if got := b.Bytes(); !bytes.Equal(data, got) {
-		panic(fmt.Sprintf("re-encoded %q frame does not match original input:\noriginal:\n%s\nre-encoded:\n%s\n", f.BaseCmd.GetType(), hex.Dump(data), hex.Dump(got)))
+	got := b.Bytes()
+
+	// ignore input data that extends beyond
+	// the encoded data
+	dataEnd := len(data)
+	if l := len(got); dataEnd > l {
+		dataEnd = l
+	}
+	consumed := data[:dataEnd]
+
+	if !bytes.Equal(consumed, got) {
+		panic(fmt.Sprintf(
+			"re-encoded %q frame does not match original input:\noriginal:\n%s\nre-encoded:\n%s\n",
+			f.BaseCmd.GetType(),
+			hex.Dump(consumed),
+			hex.Dump(got),
+		))
 	}
 
 	return 1
