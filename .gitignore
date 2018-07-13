@@ -9,3 +9,8 @@ certs
 
 # ignore compiled cli
 cli/cli
+
+# ignore fuzz artifacts
+fuzz/pulsar-corpus-gen
+fuzz/pulsar-fuzz.zip
+fuzz/workdir/
