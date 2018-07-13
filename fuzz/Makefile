@@ -13,7 +13,7 @@ fuzz: pulsar-fuzz.zip
 
 # Create fuzz binary/zip
 pulsar-fuzz.zip: ../frame_fuzz.go ../frame.go
-	go-fuzz-build $(go list -e ../) -o $@
+	go-fuzz-build -o $@ $(shell go list -e ../)
 
 # Build corpus-gen program
 pulsar-corpus-gen: corpus-gen/main.go
