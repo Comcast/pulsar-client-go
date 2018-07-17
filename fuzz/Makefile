@@ -3,17 +3,29 @@
 # create initial fuzz corpus
 CAPTURE_DEVICE := lo0
 CAPTURE_PORT := 6650
-# Where to saved results of fuzzing
-WORKDIR := workdir
+INITIAL_CORPUS := initial-corpus
 
-# Start fuzzing!
+# Start fuzzing (Fuzz function)!
 .PHONY: fuzz
 fuzz: pulsar-fuzz.zip
-	go-fuzz -bin=./pulsar-fuzz.zip -workdir=${WORKDIR}
+	mkdir -p $@-workdir/corpus
+	[ -d ${INITIAL_CORPUS} ] && cp ${INITIAL_CORPUS}/* $@-workdir/corpus/.
+	go-fuzz -bin=./pulsar-fuzz.zip -workdir=$@-workdir
 
-# Create fuzz binary/zip
+# Create fuzz binary/zip for Fuzz func
 pulsar-fuzz.zip: ../frame_fuzz.go ../frame.go
-	go-fuzz-build -o $@ $(shell go list -e ../)
+	go-fuzz-build -func Fuzz -o $@ $(shell go list -e ../)
+
+# Start fuzzing (FuzzReEncode function)!
+.PHONY: fuzz-reencode
+fuzz-reencode: pulsar-fuzzreencode.zip
+	mkdir -p $@-workdir/corpus
+	[ -d ${INITIAL_CORPUS} ] && cp ${INITIAL_CORPUS}/* $@-workdir/corpus/.
+	go-fuzz -bin=./pulsar-fuzzreencode.zip -workdir=$@-workdir
+
+# Create fuzz binary/zip for FuzzReEncode func
+pulsar-fuzzreencode.zip: ../frame_fuzz.go ../frame.go
+	go-fuzz-build -func FuzzReEncode -o $@ $(shell go list -e ../)
 
 # Build corpus-gen program
 pulsar-corpus-gen: corpus-gen/main.go
@@ -23,9 +35,9 @@ pulsar-corpus-gen: corpus-gen/main.go
 # initial corpus
 .PHONY: initial-corpus
 initial-corpus: pulsar-corpus-gen
-	@mkdir -p workdir/corpus
 	@echo "########################################################################################"
 	@echo "Generate Pulsar traffic using official Pulsar client and server to create initial corpus"
 	@echo "Listening for traffic on device:${CAPTURE_DEVICE} port:${CAPTURE_PORT}"
 	@echo "########################################################################################"
-	./pulsar-corpus-gen -device ${CAPTURE_DEVICE} -port ${CAPTURE_PORT} -dir ${WORKDIR}/corpus
+	@mkdir -p ${INITIAL_CORPUS}
+	./pulsar-corpus-gen -device ${CAPTURE_DEVICE} -port ${CAPTURE_PORT} -dir ${INITIAL_CORPUS}
