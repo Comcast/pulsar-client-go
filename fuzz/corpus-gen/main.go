@@ -27,17 +27,16 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
-var args = struct {
-	device string
-	port   int
-	dir    string
-}{
-	device: "lo0",
-	port:   6650,
-	dir:    "corpus",
-}
-
 func main() {
+	var args = struct {
+		device string
+		port   int
+		dir    string
+	}{
+		device: "lo0",
+		port:   6650,
+		dir:    "corpus",
+	}
 	flag.StringVar(&args.device, "device", args.device, "device to capture packets from")
 	flag.IntVar(&args.port, "port", args.port, "port to capture packets on")
 	flag.StringVar(&args.dir, "dir", args.dir, "directory to store corpus files")
@@ -54,11 +53,11 @@ func main() {
 
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 	for packet := range packetSource.Packets() {
-		handlePacket(packet)
+		handlePacket(args.dir, packet)
 	}
 }
 
-func handlePacket(pkt gopacket.Packet) {
+func handlePacket(outputDir string, pkt gopacket.Packet) {
 	data := pkt.Layer(layers.LayerTypeTCP).LayerPayload()
 	if len(data) == 0 {
 		return
@@ -70,7 +69,7 @@ func handlePacket(pkt gopacket.Packet) {
 		return
 	}
 
-	p := path.Join(args.dir, fmt.Sprintf("%d-%s", pkt.Metadata().Timestamp.UnixNano(), f.BaseCmd.GetType().String()))
+	p := path.Join(outputDir, fmt.Sprintf("%d-%s", pkt.Metadata().Timestamp.UnixNano(), f.BaseCmd.GetType().String()))
 	if err := ioutil.WriteFile(p, data, os.ModePerm); err != nil {
 		panic(err)
 	}
