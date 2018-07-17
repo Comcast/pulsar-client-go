@@ -9,7 +9,7 @@ From the `go-fuzz` README:
 > and is especially useful for hardening of systems that parse inputs from potentially
 > malicious users (e.g. anything accepted over a network).
 
-The [`frame_fuzz.go`](../frame_fuzz.go) file contains the two entrypoints to the fuzzer.
+The [`frame_fuzz.go`](../frame_fuzz.go) file contains the entrypoint to the fuzzer.
 
 ## Prerequisites
 
@@ -53,8 +53,8 @@ by capturing Pulsar traffic from the network and recording Pulsar packets to dis
 the standalone server can be used along with the Java Pulsar client to publish messages and subscribe to topics.
 As many unique message types as possible should be created.
 
-* The Pulsar packets will be saved to the `/fuzz/initial-corpus` directory as they're captured. The `fuzz` and `fuzz-reencode` make targets
-will copy over the initial corpus files to specific _workdir_ directories for each test.
+* The Pulsar packets will be saved to the `/fuzz/initial-corpus` directory as they're captured. The `fuzz` make target
+will copy over the initial corpus files to a _workdir_ directory.
 
 ## Fuzzing
 
@@ -64,8 +64,4 @@ The fuzzer binary can be created/updated and fuzzing started with the following 
     make fuzz
     ```
 
-    ```shell
-    make fuzz-reencode
-    ```
-
-The fuzzer will run indefinitely (and use a lot of CPU). Interesting results will be saved in the `/fuzz/{fuzz,fuzz-reencode}-workdir/crashers` directories.
+The fuzzer will run indefinitely (and use a lot of CPU). Interesting results will be saved in the `/fuzz/fuzz-workdir/crashers` directories.
