@@ -181,10 +181,9 @@ func (f *Frame) Decode(r io.Reader) error {
 			return err
 		}
 
-		lr = &io.LimitedReader{
-			N: lr.N,
-			R: io.TeeReader(lr.R, &chksum),
-		}
+		// Use a tee reader to compute the checksum
+		// of everything consumed after this point
+		lr.R = io.TeeReader(lr.R, &chksum)
 
 		// Fill buffer with metadata size, which is what it
 		// would already contain if there were no magic number / checksum
