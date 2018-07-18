@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"io"
 )
 
 // Fuzz is an entrypoint for fuzz testing done by
@@ -43,33 +42,43 @@ func Fuzz(data []byte) int {
 //
 // See the /fuzz directory for more information.
 func FuzzReEncode(data []byte) int {
-	var b bytes.Buffer
-	// copy to b the portion of data that Decode consumes
-	input := io.TeeReader(bytes.NewReader(data), &b)
+	var original, reencoded Frame
+	b := bytes.NewBuffer(data)
 
-	var f Frame
-	if err := f.Decode(input); err != nil {
+	if err := original.Decode(b); err != nil {
 		return 0
 	}
-
-	consumed := make([]byte, b.Len())
-	copy(consumed, b.Bytes())
 	b.Reset()
-
-	// Ensure that the re-encoded frame matches the
-	// original input byte-for-byte (ignoring any additional
-	// bytes that Decode did not consume)
-	if err := f.Encode(&b); err != nil {
+	if err := original.Encode(b); err != nil {
 		panic(err)
 	}
-	reencoded := b.Bytes()
 
-	if !bytes.Equal(consumed, reencoded) {
+	// protobuf is liberal in what it will consume, so
+	// we must encoded/decode twice. The first time will
+	// remove any extraneous bytes that won't be included
+	// in the re-encoded output.
+
+	originalEnc := make([]byte, b.Len())
+	copy(originalEnc, b.Bytes())
+
+	if err := reencoded.Decode(b); err != nil {
+		panic(err)
+	}
+	b.Reset()
+	if err := reencoded.Encode(b); err != nil {
+		panic(err)
+	}
+
+	reencodedEnc := make([]byte, b.Len())
+	copy(reencodedEnc, b.Bytes())
+
+	if !bytes.Equal(originalEnc, reencodedEnc) {
 		panic(fmt.Sprintf(
-			"re-encoded %q frame does not match original input:\noriginal:\n%s\nre-encoded:\n%s\n",
-			f.BaseCmd.GetType(),
-			hex.Dump(consumed),
-			hex.Dump(reencoded),
+			"%q encoding/decoding/encoding mismatch\noriginal input:\n%s\nfirst encode:\n%s\nsecond encode:\n%s\n",
+			original.BaseCmd.GetType(),
+			hex.Dump(data),
+			hex.Dump(originalEnc),
+			hex.Dump(reencodedEnc),
 		))
 	}
 
