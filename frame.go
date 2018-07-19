@@ -1,17 +1,15 @@
-/**
-* Copyright 2018 Comcast Cable Communications Management, LLC
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
- */
+// Copyright 2018 Comcast Cable Communications Management, LLC
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package pulsar
 
@@ -35,7 +33,7 @@ const maxFrameSize = 5 * 1024 * 1024 // 5mb
 // identifying an optional checksum in the message,
 // as defined by the pulsar protocol
 // https://pulsar.incubator.apache.org/docs/latest/project/BinaryProtocol/#Payloadcommands-kbk8xf
-var magicNumber = []byte{0x0e, 0x01}
+var magicNumber = [...]byte{0x0e, 0x01}
 
 // Frame represents a pulsar message frame.
 // It can be used to encode and decode messages
@@ -101,15 +99,15 @@ func (f *Frame) Decode(r io.Reader) error {
 	var err error
 
 	// reusable buffer for 4-byte uint32s
-	sizeBuf := make([]byte, 4)
+	buf32 := make([]byte, 4)
 
 	// Read totalSize
 	// totalSize: The size of the frame,
 	// counting everything that comes after it (in bytes)
-	if _, err = io.ReadFull(r, sizeBuf); err != nil {
+	if _, err = io.ReadFull(r, buf32); err != nil {
 		return err
 	}
-	totalSize := binary.BigEndian.Uint32(sizeBuf)
+	totalSize := binary.BigEndian.Uint32(buf32)
 
 	// frameSize is the total length of the frame (totalSize
 	// is the size of all the _following_ bytes).
@@ -127,10 +125,10 @@ func (f *Frame) Decode(r io.Reader) error {
 	}
 
 	// Read cmdSize
-	if _, err = io.ReadFull(lr, sizeBuf); err != nil {
+	if _, err = io.ReadFull(lr, buf32); err != nil {
 		return err
 	}
-	cmdSize := binary.BigEndian.Uint32(sizeBuf)
+	cmdSize := binary.BigEndian.Uint32(buf32)
 
 	// Read protobuf encoded BaseCommand
 	cmdBuf := make([]byte, cmdSize)
@@ -157,20 +155,20 @@ func (f *Frame) Decode(r io.Reader) error {
 	// so, it indicates that the following 4 bytes are a checksum.
 	// If not, the following 2 bytes (plus the 2 bytes already read),
 	// are the metadataSize, which is why a 4 byte buffer is used.
-	if _, err = io.ReadFull(lr, sizeBuf); err != nil {
+	if _, err = io.ReadFull(lr, buf32); err != nil {
 		return err
 	}
 
 	// Check for magicNumber and checksum
 	var hasChecksum bool
 	var checksum [4]byte
-	if magicNumber[0] == sizeBuf[0] && magicNumber[1] == sizeBuf[1] {
+	if magicNumber[0] == buf32[0] && magicNumber[1] == buf32[1] {
 		hasChecksum = true
 
 		// We already read the 2-byte magicNumber + 2 additional bytes
 		// of the checksum
-		checksum[0] = sizeBuf[2]
-		checksum[1] = sizeBuf[3]
+		checksum[0] = buf32[2]
+		checksum[1] = buf32[3]
 
 		if _, err = io.ReadFull(lr, checksum[2:]); err != nil {
 			return err
@@ -180,13 +178,13 @@ func (f *Frame) Decode(r io.Reader) error {
 	_ = hasChecksum
 
 	if hasChecksum {
-		if _, err = io.ReadFull(lr, sizeBuf); err != nil {
+		if _, err = io.ReadFull(lr, buf32); err != nil {
 			return err
 		}
 	}
 
 	// Read metadataSize
-	metadataSize := binary.BigEndian.Uint32(sizeBuf)
+	metadataSize := binary.BigEndian.Uint32(buf32)
 
 	// Read protobuf encoded metadata
 	metaBuf := make([]byte, metadataSize)
