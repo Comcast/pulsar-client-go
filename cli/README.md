@@ -20,10 +20,12 @@ Usage of ./cli:
     	rate at which to send messages (default 1s)
   -shared
     	if true, consumer is shared, otherwise exclusive
+  -tls-ca string
+    	(optional) path to root certificate
   -tls-cert string
     	(optional) path to TLS certificate
   -tls-insecure
-    	ignore invalid server certificates
+    	if true, do not verify server certificate chain when using TLS
   -tls-key string
     	(optional) path to TLS key
   -topic string
