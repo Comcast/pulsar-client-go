@@ -15,7 +15,7 @@ In comparison, this library is 100% Go (no cgo required). Outside the Go standar
 
 **Status**
 
-This client is a work-in-progress and as such does not support all Pulsar features. It supports `v1.22` of Pulsar.
+This client is a work-in-progress and as such does not support all Pulsar features. It supports Pulsar 2.0 along with 1.22.
 
 The following is an incomplete list of features that are not yet implemented:
 
@@ -24,7 +24,6 @@ The following is an incomplete list of features that are not yet implemented:
 * Partitioned topics support
 * Athenz authentication support
 * Encryption support
-* Pulsar `2.x` support
 
 **Goals**
 
