@@ -46,28 +46,16 @@ func newTCPConn(addr string, timeout time.Duration) (*conn, error) {
 	}, nil
 }
 
-// TLSConfig is used to provide options
-// for the TLS connection to the Pulsar server
-type TLSConfig struct {
-	Certificate tls.Certificate // The client's TLS certificate pair
-	SkipVerify  bool            // If true, the client will not verify the certificate presented by the server
-}
-
 // newTLSConn creates a conn using a TCPv4+TLS connection to the given
 // (pulsar server) address.
-func newTLSConn(addr string, cfg TLSConfig, timeout time.Duration) (*conn, error) {
+func newTLSConn(addr string, tlsCfg *tls.Config, timeout time.Duration) (*conn, error) {
 	addr = strings.TrimPrefix(addr, "pulsar://")
-
-	tlsCfg := tls.Config{
-		Certificates:       []tls.Certificate{cfg.Certificate},
-		InsecureSkipVerify: cfg.SkipVerify,
-	}
 
 	d := net.Dialer{
 		DualStack: false,
 		Timeout:   timeout,
 	}
-	c, err := tls.DialWithDialer(&d, "tcp4", addr, &tlsCfg)
+	c, err := tls.DialWithDialer(&d, "tcp4", addr, tlsCfg)
 	if err != nil {
 		return nil, err
 	}

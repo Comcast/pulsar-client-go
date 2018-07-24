@@ -15,6 +15,7 @@ package pulsar
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"time"
 
@@ -45,7 +46,7 @@ type ClientConfig struct {
 	Addr        string        // pulsar broker address. May start with pulsar://
 	phyAddr     string        // if set, the TCP connection should be made using this address. This is only ever set during Topic Lookup
 	DialTimeout time.Duration // timeout to use when establishing TCP connection
-	TLSConfig   *TLSConfig    // TLS certificate configuration. May be nil, in which case TLS will not be used
+	TLSConfig   *tls.Config   // TLS configuration. May be nil, in which case TLS will not be used
 	Errs        chan<- error  // asynchronous errors will be sent here. May be nil
 }
 
@@ -77,7 +78,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 	var err error
 
 	if cfg.TLSConfig != nil {
-		cnx, err = newTLSConn(cfg.connAddr(), *cfg.TLSConfig, cfg.DialTimeout)
+		cnx, err = newTLSConn(cfg.connAddr(), cfg.TLSConfig, cfg.DialTimeout)
 	} else {
 		cnx, err = newTCPConn(cfg.connAddr(), cfg.DialTimeout)
 	}

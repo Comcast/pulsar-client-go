@@ -21,8 +21,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -35,6 +37,7 @@ var args = struct {
 	pulsar        string
 	tlsCert       string
 	tlsKey        string
+	tlsCA         string
 	tlsSkipVerify bool
 	name          string
 	topic         string
@@ -46,6 +49,7 @@ var args = struct {
 	pulsar:        "localhost:6650",
 	tlsCert:       "",
 	tlsKey:        "",
+	tlsCA:         "",
 	tlsSkipVerify: false,
 	name:          "demo",
 	topic:         "persistent://sample/standalone/ns1/demo",
@@ -59,7 +63,8 @@ func main() {
 	flag.StringVar(&args.pulsar, "pulsar", args.pulsar, "pulsar address")
 	flag.StringVar(&args.tlsCert, "tls-cert", args.tlsCert, "(optional) path to TLS certificate")
 	flag.StringVar(&args.tlsKey, "tls-key", args.tlsKey, "(optional) path to TLS key")
-	flag.BoolVar(&args.tlsSkipVerify, "tls-insecure", args.tlsSkipVerify, "ignore invalid server certificates")
+	flag.StringVar(&args.tlsCA, "tls-ca", args.tlsKey, "(optional) path to root certificate")
+	flag.BoolVar(&args.tlsSkipVerify, "tls-insecure", args.tlsSkipVerify, "if true, do not verify server certificate chain when using TLS")
 	flag.StringVar(&args.name, "name", args.name, "producer/consumer name")
 	flag.StringVar(&args.topic, "topic", args.topic, "producer/consumer topic")
 	flag.BoolVar(&args.producer, "producer", args.producer, "if true, produce messages, otherwise consume")
@@ -84,16 +89,38 @@ func main() {
 		cancel()
 	}()
 
-	var tlsCfg *pulsar.TLSConfig
+	var tlsCfg *tls.Config
 	if args.tlsCert != "" && args.tlsKey != "" {
-		tlsCfg = &pulsar.TLSConfig{
-			SkipVerify: args.tlsSkipVerify,
+		tlsCfg = &tls.Config{
+			InsecureSkipVerify: args.tlsSkipVerify,
 		}
 		var err error
-		tlsCfg.Certificate, err = tls.LoadX509KeyPair(args.tlsCert, args.tlsKey)
+		cert, err := tls.LoadX509KeyPair(args.tlsCert, args.tlsKey)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error loading certificates:", err)
 			os.Exit(1)
+		}
+		tlsCfg.Certificates = []tls.Certificate{cert}
+
+		if args.tlsCA != "" {
+			rootCA, err := ioutil.ReadFile(args.tlsCA)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "error loading certificate authority:", err)
+				os.Exit(1)
+			}
+			tlsCfg.RootCAs = x509.NewCertPool()
+			tlsCfg.RootCAs.AppendCertsFromPEM(rootCA)
+		}
+
+		// Inspect certificate and print the CommonName attribute,
+		// since this may be used for authorization
+		if len(cert.Certificate[0]) > 0 {
+			x509Cert, err := x509.ParseCertificate(cert.Certificate[0])
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "error loading public certificate:", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Using certificate pair with CommonName = %q\n", x509Cert.Subject.CommonName)
 		}
 	}
 
