@@ -19,6 +19,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -54,7 +55,7 @@ var args = struct {
 	name:          "demo",
 	topic:         "persistent://sample/standalone/ns1/demo",
 	producer:      false,
-	message:       "hola mundo",
+	message:       "--",
 	messageRate:   time.Second,
 	shared:        false,
 }
@@ -68,7 +69,7 @@ func main() {
 	flag.StringVar(&args.name, "name", args.name, "producer/consumer name")
 	flag.StringVar(&args.topic, "topic", args.topic, "producer/consumer topic")
 	flag.BoolVar(&args.producer, "producer", args.producer, "if true, produce messages, otherwise consume")
-	flag.StringVar(&args.message, "message", args.message, "message to send when producing (with %03d $messageNumber tacked on the front)")
+	flag.StringVar(&args.message, "message", args.message, "If equal to '--', then STDIN will be used. Otherwise value with %03d $messageNumber tacked on the front will be sent")
 	flag.DurationVar(&args.messageRate, "rate", args.messageRate, "rate at which to send messages")
 	flag.BoolVar(&args.shared, "shared", args.shared, "if true, consumer is shared, otherwise exclusive")
 	flag.Parse()
@@ -146,22 +147,49 @@ func main() {
 		mp := pulsar.NewManagedProducer(mcp, mpCfg)
 		fmt.Printf("Created producer on topic %q...\n", args.topic)
 
-		ticker := time.NewTicker(args.messageRate)
-		defer ticker.Stop()
+		// messages to produce are sent to this
+		// channel
+		messages := make(chan []byte)
 
-		var i int
+		switch args.message {
+
+		// read messages from STDIN
+		case "--":
+			go func() {
+				scanner := bufio.NewScanner(os.Stdin)
+				for scanner.Scan() {
+					line := scanner.Bytes()
+					cp := make([]byte, len(line))
+					copy(cp, line)
+
+					messages <- cp
+				}
+				close(messages)
+			}()
+
+		default:
+			go func() {
+				var i int
+				for range time.NewTicker(args.messageRate).C {
+					i++
+					messages <- []byte(fmt.Sprintf("%03d %s", i, args.message))
+				}
+			}()
+		}
+
 		for {
 			select {
-			case <-ticker.C:
+			case payload, ok := <-messages:
+				if !ok {
+					return
+				}
 				sctx, cancel := context.WithTimeout(ctx, time.Second)
-				payload := fmt.Sprintf("%03d %s", i, args.message)
-				_, err := mp.Send(sctx, []byte(payload))
+				_, err := mp.Send(sctx, payload)
 				cancel()
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 					continue
 				}
-				i++
 
 			case <-ctx.Done():
 				return
