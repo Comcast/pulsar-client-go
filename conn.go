@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 // newTCPConn creates a conn using a TCPv4 connection to the given
@@ -112,9 +113,9 @@ func (c *conn) closed() <-chan struct{} {
 // will close the connection. Also if close() is called,
 // read() will unblock. Once read returns, the conn should
 // be considered unusable.
-func (c *conn) read(frameHandler func(f Frame)) error {
+func (c *conn) read(frameHandler func(f frame.Frame)) error {
 	for {
-		var f Frame
+		var f frame.Frame
 		if err := f.Decode(c.rc); err != nil {
 			// It's very possible that the connection is already closed at this
 			// point, since any connection closed errors would bubble up
@@ -131,7 +132,7 @@ func (c *conn) read(frameHandler func(f Frame)) error {
 // sendSimpleCmd writes a "simple" frame to the wire. It
 // is safe to use concurrently.
 func (c *conn) sendSimpleCmd(cmd api.BaseCommand) error {
-	return c.writeFrame(&Frame{
+	return c.writeFrame(&frame.Frame{
 		BaseCmd: &cmd,
 	})
 }
@@ -139,7 +140,7 @@ func (c *conn) sendSimpleCmd(cmd api.BaseCommand) error {
 // sendPayloadCmd writes a "payload" frame to the wire. It
 // is safe to use concurrently.
 func (c *conn) sendPayloadCmd(cmd api.BaseCommand, metadata api.MessageMetadata, payload []byte) error {
-	return c.writeFrame(&Frame{
+	return c.writeFrame(&frame.Frame{
 		BaseCmd:  &cmd,
 		Metadata: &metadata,
 		Payload:  payload,
@@ -148,13 +149,13 @@ func (c *conn) sendPayloadCmd(cmd api.BaseCommand, metadata api.MessageMetadata,
 
 var bufPool = sync.Pool{
 	New: func() interface{} {
-		return bytes.NewBuffer(make([]byte, 0, maxFrameSize))
+		return bytes.NewBuffer(make([]byte, 0, frame.MaxFrameSize))
 	},
 }
 
 // writeFrame encodes the given frame and writes
 // it to the wire in a thread-safe manner.
-func (c *conn) writeFrame(f *Frame) error {
+func (c *conn) writeFrame(f *frame.Frame) error {
 	b := bufPool.Get().(*bytes.Buffer)
 	defer bufPool.Put(b)
 	b.Reset()

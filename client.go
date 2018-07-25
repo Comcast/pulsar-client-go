@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 const (
@@ -103,7 +104,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		pubsub:        newPubsub(cnx, dispatcher, subs, &reqID),
 	}
 
-	handler := func(f Frame) {
+	handler := func(f frame.Frame) {
 		// All message types can be handled in
 		// parallel, since their ordering should not matter
 		go c.handleFrame(f)
@@ -242,7 +243,7 @@ func (c *Client) NewFailoverConsumer(ctx context.Context, topic, subscriptionNam
 
 // handleFrame is called by the underlaying conn with
 // all received Frames.
-func (c *Client) handleFrame(f Frame) {
+func (c *Client) handleFrame(f frame.Frame) {
 	var err error
 
 	msgType := f.BaseCmd.GetType()

@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -45,7 +46,7 @@ func NewServer(ctx context.Context) (*Server, error) {
 	// buffer a reasonable (and arbitrary) amount
 	// so that all frames received during a single test
 	// will be buffered.
-	received := make(chan Frame, 128)
+	received := make(chan frame.Frame, 128)
 
 	srv := Server{
 		Addr:             fmt.Sprintf("pulsar://%s", l.Addr().String()),
@@ -87,7 +88,7 @@ func NewServer(ctx context.Context) (*Server, error) {
 				}()
 
 				for {
-					var f Frame
+					var f frame.Frame
 					if err := f.Decode(c); err != nil {
 						return
 					}
@@ -115,7 +116,7 @@ func NewServer(ctx context.Context) (*Server, error) {
 // Server emulates a Pulsar server
 type Server struct {
 	Addr     string
-	Received <-chan Frame
+	Received <-chan frame.Frame
 
 	trmu             sync.Mutex
 	topicLookupResps map[string]topicLookupResp // map of topic -> topicLookupResp
@@ -192,7 +193,7 @@ func (m *Server) TotalNumConns() int {
 }
 
 // Broadcast sends the given frame to all connected clients.
-func (m *Server) Broadcast(f Frame) error {
+func (m *Server) Broadcast(f frame.Frame) error {
 	var b bytes.Buffer
 	if err := f.Encode(&b); err != nil {
 		return err
@@ -226,7 +227,7 @@ func (m *Server) CloseAll() error {
 	return nil
 }
 
-func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
+func (m *Server) handleFrame(f frame.Frame, remoteAddr string) *frame.Frame {
 	msgType := f.BaseCmd.GetType()
 
 	switch msgType {
@@ -240,7 +241,7 @@ func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
 			return nil
 		}
 
-		return &Frame{
+		return &frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_CONNECTED.Enum(),
 				Connected: &api.CommandConnected{
@@ -259,7 +260,7 @@ func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
 			return nil
 		}
 
-		return &Frame{
+		return &frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PONG.Enum(),
 				Pong: &api.CommandPong{},
@@ -283,7 +284,7 @@ func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
 		}
 		m.trmu.Unlock()
 
-		return &Frame{
+		return &frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_LOOKUP_RESPONSE.Enum(),
 				LookupTopicResponse: &api.CommandLookupTopicResponse{
@@ -304,7 +305,7 @@ func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
 
 	// allow Producers to be created
 	case api.BaseCommand_PRODUCER:
-		return &Frame{
+		return &frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PRODUCER_SUCCESS.Enum(),
 				ProducerSuccess: &api.CommandProducerSuccess{
@@ -316,7 +317,7 @@ func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
 
 	// allow Consumers to be created
 	case api.BaseCommand_SUBSCRIBE:
-		return &Frame{
+		return &frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_SUCCESS.Enum(),
 				Success: &api.CommandSuccess{
@@ -326,7 +327,7 @@ func (m *Server) handleFrame(f Frame, remoteAddr string) *Frame {
 		}
 
 	case api.BaseCommand_SEND:
-		return &Frame{
+		return &frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_SEND_RECEIPT.Enum(),
 				SendReceipt: &api.CommandSendReceipt{

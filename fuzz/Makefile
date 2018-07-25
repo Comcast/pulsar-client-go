@@ -26,8 +26,8 @@ fuzz: pulsar-fuzz.zip
 	go-fuzz -bin=./pulsar-fuzz.zip -workdir=$@-workdir
 
 # Create fuzz binary/zip for Fuzz func
-pulsar-fuzz.zip: ../frame_fuzz.go ../frame.go
-	go-fuzz-build -func Fuzz -o $@ $(shell go list -e ../)
+pulsar-fuzz.zip: ../frame/frame_fuzz.go ../frame/frame.go
+	go-fuzz-build -func Fuzz -o $@ $(shell go list -e ../frame)
 
 # Start fuzzing (FuzzReEncode function)!
 .PHONY: fuzz-reencode
@@ -37,8 +37,8 @@ fuzz-reencode: pulsar-fuzzreencode.zip
 	go-fuzz -bin=./pulsar-fuzzreencode.zip -workdir=$@-workdir
 
 # Create fuzz binary/zip for FuzzReEncode func
-pulsar-fuzzreencode.zip: ../frame_fuzz.go ../frame.go
-	go-fuzz-build -func FuzzReEncode -o $@ $(shell go list -e ../)
+pulsar-fuzzreencode.zip: ../frame/frame_fuzz.go ../frame/frame.go
+	go-fuzz-build -func FuzzReEncode -o $@ $(shell go list -e ../frame)
 
 # Build corpus-gen program
 pulsar-corpus-gen: corpus-gen/main.go

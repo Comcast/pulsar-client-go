@@ -13,7 +13,7 @@
 
 // +build gofuzz
 
-package pulsar
+package frame
 
 import (
 	"bytes"

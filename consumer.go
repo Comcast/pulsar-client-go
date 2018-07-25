@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -198,7 +199,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context) error {
 
 // handleCloseConsumer should be called when a CLOSE_CONSUMER message is received
 // associated with this consumer.
-func (c *Consumer) handleCloseConsumer(f Frame) error {
+func (c *Consumer) handleCloseConsumer(f frame.Frame) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -220,7 +221,7 @@ func (c *Consumer) ReachedEndOfTopic() <-chan struct{} {
 
 // handleReachedEndOfTopic should be called for all received REACHED_END_OF_TOPIC messages
 // associated with this consumer.
-func (c *Consumer) handleReachedEndOfTopic(f Frame) error {
+func (c *Consumer) handleReachedEndOfTopic(f frame.Frame) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -300,7 +301,7 @@ func (c *Consumer) RedeliverOverflow(ctx context.Context) (int, error) {
 
 // handleMessage should be called for all MESSAGE messages received for
 // this consumer.
-func (c *Consumer) handleMessage(f Frame) error {
+func (c *Consumer) handleMessage(f frame.Frame) error {
 	m := Message{
 		Topic:      c.topic,
 		consumerID: c.consumerID,

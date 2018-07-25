@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 func TestPinger_HandlePing(t *testing.T) {
@@ -56,7 +57,7 @@ func TestPinger_Ping(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_PONG.Enum(),
 			Pong: &api.CommandPong{},

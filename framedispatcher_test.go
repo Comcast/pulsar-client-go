@@ -18,11 +18,12 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 type dispatcherTestCase struct {
-	register func() (response <-chan Frame, cancel func(), err error)
-	notify   func(frame Frame) error
+	register func() (response <-chan frame.Frame, cancel func(), err error)
+	notify   func(frame frame.Frame) error
 }
 
 // dispatcherTestCases allows for the 3 types of dispatchers
@@ -37,12 +38,12 @@ func dispatcherTestCases() map[string]dispatcherTestCase {
 			notify:   fd.notifyGlobal,
 		},
 		"prodSeqID": {
-			register: func() (<-chan Frame, func(), error) { return fd.registerProdSeqIDs(1, 2) },
-			notify:   func(f Frame) error { return fd.notifyProdSeqIDs(1, 2, f) },
+			register: func() (<-chan frame.Frame, func(), error) { return fd.registerProdSeqIDs(1, 2) },
+			notify:   func(f frame.Frame) error { return fd.notifyProdSeqIDs(1, 2, f) },
 		},
 		"reqID": {
-			register: func() (<-chan Frame, func(), error) { return fd.registerReqID(42) },
-			notify:   func(f Frame) error { return fd.notifyReqID(42, f) },
+			register: func() (<-chan frame.Frame, func(), error) { return fd.registerReqID(42) },
+			notify:   func(f frame.Frame) error { return fd.notifyReqID(42, f) },
 		},
 	}
 }
@@ -61,7 +62,7 @@ func TestFrameDispatcher_Success(t *testing.T) {
 				}
 
 				// response frame. The type and contents are arbitrary
-				expected := Frame{
+				expected := frame.Frame{
 					BaseCmd: &api.BaseCommand{
 						Type: api.BaseCommand_CONNECTED.Enum(),
 						Pong: &api.CommandPong{},
@@ -132,7 +133,7 @@ func TestFrameDispatcher_DupNotify(t *testing.T) {
 			defer cancel()
 
 			// response frame. The type and contents are arbitrary
-			expected := Frame{
+			expected := frame.Frame{
 				BaseCmd: &api.BaseCommand{
 					Type: api.BaseCommand_CONNECTED.Enum(),
 					Pong: &api.CommandPong{},
@@ -185,7 +186,7 @@ func TestFrameDispatcher_Unexpected(t *testing.T) {
 			// no register is called
 
 			// response frame. The type and contents are arbitrary
-			f := Frame{
+			f := frame.Frame{
 				BaseCmd: &api.BaseCommand{
 					Type: api.BaseCommand_CONNECTED.Enum(),
 					Pong: &api.CommandPong{},
@@ -218,7 +219,7 @@ func TestFrameDispatcher_Timeout(t *testing.T) {
 			cancel()
 
 			// response frame. The type and contents are arbitrary
-			f := Frame{
+			f := frame.Frame{
 				BaseCmd: &api.BaseCommand{
 					Type: api.BaseCommand_CONNECTED.Enum(),
 					Pong: &api.CommandPong{},

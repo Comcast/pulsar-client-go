@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -54,7 +55,7 @@ func TestProducer_Send_Success(t *testing.T) {
 		ProducerId: proto.Uint64(prodID),
 		SequenceId: proto.Uint64(0),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:        api.BaseCommand_SEND_RECEIPT.Enum(),
 			SendReceipt: &expected,
@@ -106,7 +107,7 @@ func TestProducer_Send_Error(t *testing.T) {
 	// Allow goroutine time to complete
 	time.Sleep(100 * time.Millisecond)
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_SEND_ERROR.Enum(),
 			SendError: &api.CommandSendError{
@@ -160,7 +161,7 @@ func TestProducer_Close_Success(t *testing.T) {
 	expected := api.CommandSuccess{
 		RequestId: proto.Uint64(id),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:    api.BaseCommand_SUCCESS.Enum(),
 			Success: &expected,
@@ -203,7 +204,7 @@ func TestProducer_handleCloseProducer(t *testing.T) {
 		t.Logf("Closed() blocked")
 	}
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CLOSE_PRODUCER.Enum(),
 			CloseProducer: &api.CommandCloseProducer{

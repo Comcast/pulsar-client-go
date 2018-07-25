@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 // newFrameDispatcher returns an instantiated frameDispatcher.
@@ -57,7 +59,7 @@ type frameDispatcher struct {
 // then the `done` channel is closed, signaling to the response
 // side that the response is not expected/needed.
 type asyncResp struct {
-	resp chan<- Frame
+	resp chan<- frame.Frame
 	done <-chan struct{}
 }
 
@@ -73,7 +75,7 @@ type prodSeqKey struct {
 // id (Pong, Connected responses). Only one outstanding global request
 // is allowed at a time. Callers should always call cancel, specifically
 // when they're not interested in the response.
-func (f *frameDispatcher) registerGlobal() (response <-chan Frame, cancel func(), err error) {
+func (f *frameDispatcher) registerGlobal() (response <-chan frame.Frame, cancel func(), err error) {
 	var mu sync.Mutex
 	done := make(chan struct{})
 	cancel = func() {
@@ -91,7 +93,7 @@ func (f *frameDispatcher) registerGlobal() (response <-chan Frame, cancel func()
 		done = nil
 	}
 
-	resp := make(chan Frame)
+	resp := make(chan frame.Frame)
 
 	f.globalMu.Lock()
 	if f.global != nil {
@@ -109,7 +111,7 @@ func (f *frameDispatcher) registerGlobal() (response <-chan Frame, cancel func()
 
 // notifyGlobal should be called with response frames that have
 // no identifying id (Pong, Connected).
-func (f *frameDispatcher) notifyGlobal(frame Frame) error {
+func (f *frameDispatcher) notifyGlobal(frame frame.Frame) error {
 	f.globalMu.Lock()
 	a := f.global
 	// ensure additional calls to notify
@@ -134,7 +136,7 @@ func (f *frameDispatcher) notifyGlobal(frame Frame) error {
 // id tuples to correlate them to their request. Callers should always call cancel,
 // specifically when they're not interested in the response. It is an error
 // to have multiple outstanding requests with the same id tuple.
-func (f *frameDispatcher) registerProdSeqIDs(producerID, sequenceID uint64) (response <-chan Frame, cancel func(), err error) {
+func (f *frameDispatcher) registerProdSeqIDs(producerID, sequenceID uint64) (response <-chan frame.Frame, cancel func(), err error) {
 	key := prodSeqKey{producerID, sequenceID}
 
 	var mu sync.Mutex
@@ -154,7 +156,7 @@ func (f *frameDispatcher) registerProdSeqIDs(producerID, sequenceID uint64) (res
 		done = nil
 	}
 
-	resp := make(chan Frame)
+	resp := make(chan frame.Frame)
 
 	f.prodSeqIDsMu.Lock()
 	if _, ok := f.prodSeqIDs[key]; ok {
@@ -172,7 +174,7 @@ func (f *frameDispatcher) registerProdSeqIDs(producerID, sequenceID uint64) (res
 
 // notifyProdSeqIDs should be called with response frames that have
 // (producerID, sequenceID) id tuples to correlate them to their requests.
-func (f *frameDispatcher) notifyProdSeqIDs(producerID, sequenceID uint64, frame Frame) error {
+func (f *frameDispatcher) notifyProdSeqIDs(producerID, sequenceID uint64, frame frame.Frame) error {
 	key := prodSeqKey{producerID, sequenceID}
 
 	f.prodSeqIDsMu.Lock()
@@ -200,7 +202,7 @@ func (f *frameDispatcher) notifyProdSeqIDs(producerID, sequenceID uint64, frame 
 // id to correlate them to their request. Callers should always call cancel,
 // specifically when they're not interested in the response. It is an error
 // to have multiple outstanding requests with the id.
-func (f *frameDispatcher) registerReqID(requestID uint64) (response <-chan Frame, cancel func(), err error) {
+func (f *frameDispatcher) registerReqID(requestID uint64) (response <-chan frame.Frame, cancel func(), err error) {
 	var mu sync.Mutex
 	done := make(chan struct{})
 	cancel = func() {
@@ -218,7 +220,7 @@ func (f *frameDispatcher) registerReqID(requestID uint64) (response <-chan Frame
 		done = nil
 	}
 
-	resp := make(chan Frame)
+	resp := make(chan frame.Frame)
 
 	f.reqIDMu.Lock()
 	if _, ok := f.reqIDs[requestID]; ok {
@@ -236,7 +238,7 @@ func (f *frameDispatcher) registerReqID(requestID uint64) (response <-chan Frame
 
 // notifyReqID should be called with response frames that have
 // a requestID to correlate them to their requests.
-func (f *frameDispatcher) notifyReqID(requestID uint64, frame Frame) error {
+func (f *frameDispatcher) notifyReqID(requestID uint64, frame frame.Frame) error {
 	f.reqIDMu.Lock()
 	// fetch response channel from cubbyhole
 	a, ok := f.reqIDs[requestID]

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/Comcast/pulsar-client-go/pulsartest"
 	"github.com/golang/protobuf/proto"
 )
@@ -69,7 +70,7 @@ func TestManagedConsumer(t *testing.T) {
 	// Send message to consumer
 	payload := []byte("hola mundo")
 
-	message := pulsartest.Frame{
+	message := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_MESSAGE.Enum(),
 			Message: &api.CommandMessage{
@@ -152,11 +153,11 @@ func TestManagedConsumer_ReceiveAsync(t *testing.T) {
 	go mc.ReceiveAsync(ctx, received)
 
 	// send messages to consumer
-	sent := make([]pulsartest.Frame, queueSize+1)
+	sent := make([]frame.Frame, queueSize+1)
 	for i := range sent {
 		// Send message to consumer
 		payload := []byte(fmt.Sprintf("%d hola mundo", i))
-		sent[i] = pulsartest.Frame{
+		sent[i] = frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_MESSAGE.Enum(),
 				Message: &api.CommandMessage{
@@ -321,7 +322,7 @@ func TestManagedConsumer_ConsumerClosed(t *testing.T) {
 		}
 
 		// This will be sent to the client, closing the Consumer.
-		closeConsumer := pulsartest.Frame{
+		closeConsumer := frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_CLOSE_CONSUMER.Enum(),
 				CloseConsumer: &api.CommandCloseConsumer{

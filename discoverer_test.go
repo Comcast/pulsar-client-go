@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -52,7 +53,7 @@ func TestDiscoverer_PartitionedMetadata(t *testing.T) {
 		RequestId: proto.Uint64(id),
 		Message:   proto.String("hi"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_PARTITIONED_METADATA_RESPONSE.Enum(),
 			PartitionMetadataResponse: &expected,
@@ -103,7 +104,7 @@ func TestDiscoverer_LookupTopic(t *testing.T) {
 		RequestId: proto.Uint64(id),
 		Message:   proto.String("hi"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:                api.BaseCommand_LOOKUP_RESPONSE.Enum(),
 			LookupTopicResponse: &expected,
@@ -153,7 +154,7 @@ func TestDiscoverer_LookupTopic_BadRequestID(t *testing.T) {
 		RequestId: proto.Uint64(id + 1), // incorrect RequestID
 		Message:   proto.String("hi"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:                api.BaseCommand_LOOKUP_RESPONSE.Enum(),
 			LookupTopicResponse: &expected,

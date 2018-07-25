@@ -18,6 +18,8 @@ import (
 	"io"
 	"testing"
 	"time"
+
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 func TestClient_ServerInitiatedClose(t *testing.T) {
@@ -98,7 +100,7 @@ func TestClient_ClientInitiatedClose(t *testing.T) {
 	// send read errors to srvConnReadErr chan
 	srvConnReadErr := make(chan error, 1)
 	go func() {
-		srvConnReadErr <- srvConn.read(func(f Frame) {})
+		srvConnReadErr <- srvConn.read(func(f frame.Frame) {})
 	}()
 
 	// terminate the connection from the client's end

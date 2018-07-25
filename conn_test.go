@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -43,7 +44,7 @@ func (m *mockReadCloser) Close() error {
 }
 
 func TestConn_Read(t *testing.T) {
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CONNECTED.Enum(),
 			Connected: &api.CommandConnected{
@@ -65,8 +66,8 @@ func TestConn_Read(t *testing.T) {
 		closedc: make(chan struct{}),
 	}
 
-	var gotFrames []Frame
-	handler := func(f Frame) { gotFrames = append(gotFrames, f) }
+	var gotFrames []frame.Frame
+	handler := func(f frame.Frame) { gotFrames = append(gotFrames, f) }
 	// read should read the frame, then reach
 	// and return EOF
 	if err := c.read(handler); err != io.EOF {
@@ -93,7 +94,7 @@ func TestConn_Close(t *testing.T) {
 	}
 
 	// no-op
-	handler := func(f Frame) {}
+	handler := func(f frame.Frame) {}
 
 	// read should reach and return EOF
 	err := c.read(handler)
@@ -119,8 +120,8 @@ func TestConn_GarbageInput(t *testing.T) {
 		closedc: make(chan struct{}),
 	}
 
-	var gotFrames []Frame
-	handler := func(f Frame) {
+	var gotFrames []frame.Frame
+	handler := func(f frame.Frame) {
 		gotFrames = append(gotFrames, f)
 	}
 
@@ -142,7 +143,7 @@ func TestConn_GarbageInput(t *testing.T) {
 }
 
 func TestConn_TimeoutReader(t *testing.T) {
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CONNECTED.Enum(),
 			Connected: &api.CommandConnected{
@@ -167,8 +168,8 @@ func TestConn_TimeoutReader(t *testing.T) {
 		closedc: make(chan struct{}),
 	}
 
-	var gotFrames []Frame
-	handler := func(f Frame) {
+	var gotFrames []frame.Frame
+	handler := func(f frame.Frame) {
 		gotFrames = append(gotFrames, f)
 	}
 
@@ -186,7 +187,7 @@ func TestConn_TimeoutReader(t *testing.T) {
 }
 
 func TestConn_Read_SlowSrc(t *testing.T) {
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CONNECTED.Enum(),
 			Connected: &api.CommandConnected{
@@ -210,8 +211,8 @@ func TestConn_Read_SlowSrc(t *testing.T) {
 		closedc: make(chan struct{}),
 	}
 
-	var gotFrames []Frame
-	handler := func(f Frame) {
+	var gotFrames []frame.Frame
+	handler := func(f frame.Frame) {
 		gotFrames = append(gotFrames, f)
 	}
 	// read should read the frame, then reach
@@ -235,9 +236,9 @@ func TestConn_Read_MutliFrame(t *testing.T) {
 	N := 16
 
 	// create input frames
-	frames := make([]Frame, N)
+	frames := make([]frame.Frame, N)
 	for i := range frames {
-		frames[i] = Frame{
+		frames[i] = frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_MESSAGE.Enum(),
 				Message: &api.CommandMessage{
@@ -272,8 +273,8 @@ func TestConn_Read_MutliFrame(t *testing.T) {
 		closedc: make(chan struct{}),
 	}
 
-	var gotFrames []Frame
-	handler := func(f Frame) { gotFrames = append(gotFrames, f) }
+	var gotFrames []frame.Frame
+	handler := func(f frame.Frame) { gotFrames = append(gotFrames, f) }
 	// read should read the frames, then reach
 	// and return EOF
 	if err := c.read(handler); err != io.EOF {
@@ -299,10 +300,10 @@ func TestConn_writeFrame(t *testing.T) {
 	// mapping of frame payload to frame.
 	// Since they will be written in an undetermined ordered,
 	// this helps look them up and match them.
-	frames := make([]Frame, N)
+	frames := make([]frame.Frame, N)
 	for i := 0; i < N; i++ {
 		payload := fmt.Sprintf("%02d - test message", i) // test expects that payload as string sorts properly
-		frames[i] = Frame{
+		frames[i] = frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_MESSAGE.Enum(),
 				Message: &api.CommandMessage{
@@ -346,8 +347,8 @@ func TestConn_writeFrame(t *testing.T) {
 		}
 	})
 
-	var gotFrames []Frame
-	handler := func(f Frame) { gotFrames = append(gotFrames, f) }
+	var gotFrames []frame.Frame
+	handler := func(f frame.Frame) { gotFrames = append(gotFrames, f) }
 	// read the encoded frames, which the handler
 	// will store in `gotFrames`.
 	if err := c.read(handler); err != io.EOF {
@@ -372,7 +373,7 @@ func TestConn_writeFrame(t *testing.T) {
 }
 
 func TestConn_TCP_Read(t *testing.T) {
-	testFrames := map[string]Frame{
+	testFrames := map[string]frame.Frame{
 		"ping": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PING.Enum(),
@@ -430,10 +431,10 @@ func TestConn_TCP_Read(t *testing.T) {
 	}
 
 	// start reading frames off the conn
-	received := make(chan Frame, len(testFrames))
+	received := make(chan frame.Frame, len(testFrames))
 	readErr := make(chan error, 1)
 	go func() {
-		readErr <- c.read(func(f Frame) { received <- f })
+		readErr <- c.read(func(f frame.Frame) { received <- f })
 	}()
 
 	// send frames from the Pulsar server to the conn, and
@@ -460,7 +461,7 @@ func TestConn_TCP_Read(t *testing.T) {
 }
 
 func TestConn_TCP_Write(t *testing.T) {
-	testFrames := map[string]Frame{
+	testFrames := map[string]frame.Frame{
 		"ping": {
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_PING.Enum(),
@@ -518,10 +519,10 @@ func TestConn_TCP_Write(t *testing.T) {
 		t.Fatal("timeout waiting for server to receive connection")
 	}
 
-	srvReceived := make(chan Frame)
+	srvReceived := make(chan frame.Frame)
 	go func() {
 		defer close(srvReceived)
-		srvConn.read(func(f Frame) {
+		srvConn.read(func(f frame.Frame) {
 			srvReceived <- f
 		})
 	}()
@@ -586,14 +587,14 @@ func TestConn_TCP_ReadLocalClose(t *testing.T) {
 	// send read errors to srvConnReadErr chan
 	srvConnReadErr := make(chan error, 1)
 	go func() {
-		srvConnReadErr <- srvConn.read(func(f Frame) {})
+		srvConnReadErr <- srvConn.read(func(f frame.Frame) {})
 	}()
 
 	// start reading from the conn.
 	// send read errors to readErr chan
 	readErr := make(chan error, 1)
 	go func() {
-		readErr <- c.read(func(f Frame) {})
+		readErr <- c.read(func(f frame.Frame) {})
 	}()
 
 	// close the connection from the local conn's end
@@ -650,7 +651,7 @@ func TestConn_TCP_ReadRemoteClose(t *testing.T) {
 	// Send read errors to readErr chan
 	readErr := make(chan error, 1)
 	go func() {
-		readErr <- c.read(func(f Frame) {})
+		readErr <- c.read(func(f frame.Frame) {})
 	}()
 
 	// server initiated connection closure
