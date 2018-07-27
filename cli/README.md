@@ -9,7 +9,7 @@ This program is a basic CLI utility that can be used to publish and subscribe to
 $ ./cli -h
 Usage of ./cli:
   -message string
-    	message to send when producing (with %03d $messageNumber tacked on the front) (default "hola mundo")
+    	If equal to '--', then STDIN will be used. Otherwise value with %03d $messageNumber tacked on the front will be sent (default "--")
   -name string
     	producer/consumer name (default "demo")
   -producer
@@ -42,10 +42,16 @@ $ go build
 
 These examples connect to a Pulsar server running at `localhost:6650` (default) and use the `persistent://sample/standalone/ns1/demo` topic (default).
 
-* Publish
+* Publish message repeatedly
 
     ```shell
     $ ./cli -producer -message "Hello" -rate 1s
+    ```
+
+* Publish from STDIN (hit enter after each message)
+
+    ```shell
+    $ ./cli -producer
     ```
 
 * Subscribe

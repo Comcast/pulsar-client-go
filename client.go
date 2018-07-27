@@ -25,7 +25,7 @@ import (
 const (
 	// ProtoVersion is the Pulsar protocol version
 	// used by this client.
-	ProtoVersion = int32(api.ProtocolVersion_v11)
+	ProtoVersion = int32(api.ProtocolVersion_v12)
 	// ClientVersion is an opaque string sent
 	// by the client to the server on connect, eg:
 	// "Pulsar-Client-Java-v1.15.2"

@@ -13,11 +13,6 @@
 
 pulsarSrc := ${GOPATH}/src/github.com/apache/incubator-pulsar
 
-protoPkgName := api
-protoOutput := ${protoPkgName}/PulsarApi.pb.go
-protoDefinitions := ${pulsarSrc}/pulsar-common/src/main/proto
-protoTargets = $(wildcard ${protoDefinitions}/*.proto)
-
 certDir := certs
 certDirAbs := $(shell pwd)/${certDir}
 certAppRole := app
@@ -30,11 +25,8 @@ certAdminRole := admin
 # Requirements:
 #  * protoc and protoc-gen-go are installed. See: https://github.com/golang/protobuf
 #  * The Pulsar project checked out at $GOPATH/src/github.com/apache/incubator-pulsar
-$(protoOutput): $(protoTargets)
-	@echo Generating $@ from definitions: $<
-	mkdir -p ${protoPkgName}
-	protoc --go_out=import_path=${protoPkgName}:${protoPkgName} --proto_path=${protoDefinitions} ${protoTargets}
-
+api/PulsarApi.pb.go:
+	cd api && ./generate.bash ${pulsarSrc}
 
 # When running the standalone server using TLS, the sample
 # topics aren't created properly. This target performs the
@@ -42,20 +34,17 @@ $(protoOutput): $(protoTargets)
 .PHONY: standalone-tls-ns
 standalone-tls-ns:
 	${pulsarSrc}/bin/pulsar-admin \
-		--admin-url https://localhost:8081 \
-		properties create sample \
+		tenants create sample \
 		--admin-roles admin \
-		--allowed-clusters standalone
+		--allowed-clusters standalone || true
 	@sleep 1
 	${pulsarSrc}/bin/pulsar-admin \
-		--admin-url https://localhost:8081 \
-		namespaces create sample/standalone/ns1
+		namespaces create sample/standalone/ns1 || true
 	@sleep 1
 	${pulsarSrc}/bin/pulsar-admin \
-		--admin-url https://localhost:8081 \
 		namespaces grant-permission sample/standalone/ns1 \
 		--actions produce,consume \
-		--role ${certAppRole}
+		--role ${certAppRole} || true
 
 .PHONY: pulsar-tls-conf
 pulsar-tls-conf: pulsar-conf/client.tls.conf pulsar-conf/standalone.tls.conf

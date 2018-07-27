@@ -81,7 +81,7 @@ func (c *Consumer) Ack(msg Message) error {
 		Type: api.BaseCommand_ACK.Enum(),
 		Ack: &api.CommandAck{
 			ConsumerId: proto.Uint64(c.consumerID),
-			MessageId:  msg.Msg.GetMessageId(),
+			MessageId:  []*api.MessageIdData{msg.Msg.GetMessageId()},
 			AckType:    api.CommandAck_Individual.Enum(),
 		},
 	}

@@ -17,6 +17,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"hash"
+	"hash/crc32"
 	"io"
 
 	"github.com/Comcast/pulsar-client-go/api"
@@ -38,7 +40,7 @@ const maxFrameSize = 5 * 1024 * 1024 // 5mb
 // identifying an optional checksum in the message,
 // as defined by the pulsar protocol
 // https://pulsar.incubator.apache.org/docs/latest/project/BinaryProtocol/#Payloadcommands-kbk8xf
-var magicNumber = []byte{0x0e, 0x01}
+var magicNumber = [...]byte{0x0e, 0x01}
 
 // Frame represents a pulsar message frame.
 // It can be used to encode and decode messages
@@ -104,15 +106,15 @@ func (f *Frame) Decode(r io.Reader) error {
 	var err error
 
 	// reusable buffer for 4-byte uint32s
-	sizeBuf := make([]byte, 4)
+	buf32 := make([]byte, 4)
 
 	// Read totalSize
 	// totalSize: The size of the frame,
 	// counting everything that comes after it (in bytes)
-	if _, err = io.ReadFull(r, sizeBuf); err != nil {
+	if _, err = io.ReadFull(r, buf32); err != nil {
 		return err
 	}
-	totalSize := binary.BigEndian.Uint32(sizeBuf)
+	totalSize := binary.BigEndian.Uint32(buf32)
 
 	// frameSize is the total length of the frame (totalSize
 	// is the size of all the _following_ bytes).
@@ -130,10 +132,14 @@ func (f *Frame) Decode(r io.Reader) error {
 	}
 
 	// Read cmdSize
-	if _, err = io.ReadFull(lr, sizeBuf); err != nil {
+	if _, err = io.ReadFull(lr, buf32); err != nil {
 		return err
 	}
-	cmdSize := binary.BigEndian.Uint32(sizeBuf)
+	cmdSize := binary.BigEndian.Uint32(buf32)
+	// guard against allocating large buffer
+	if cmdSize > maxFrameSize {
+		return fmt.Errorf("frame command size (%d) cannot b greater than max frame size (%d)", cmdSize, maxFrameSize)
+	}
 
 	// Read protobuf encoded BaseCommand
 	cmdBuf := make([]byte, cmdSize)
@@ -160,36 +166,43 @@ func (f *Frame) Decode(r io.Reader) error {
 	// so, it indicates that the following 4 bytes are a checksum.
 	// If not, the following 2 bytes (plus the 2 bytes already read),
 	// are the metadataSize, which is why a 4 byte buffer is used.
-	if _, err = io.ReadFull(lr, sizeBuf); err != nil {
+	if _, err = io.ReadFull(lr, buf32); err != nil {
 		return err
 	}
 
-	// Check for magicNumber and checksum
-	var hasChecksum bool
-	var checksum [4]byte
-	if magicNumber[0] == sizeBuf[0] && magicNumber[1] == sizeBuf[1] {
-		hasChecksum = true
+	// Check for magicNumber which indicates a checksum
+	var chksum frameChecksum
+	var expectedChksum []byte
+	if magicNumber[0] == buf32[0] && magicNumber[1] == buf32[1] {
+		expectedChksum = make([]byte, 4)
 
-		// We already read the 2-byte magicNumber + 2 additional bytes
-		// of the checksum
-		checksum[0] = sizeBuf[2]
-		checksum[1] = sizeBuf[3]
+		// We already read the 2-byte magicNumber and the
+		// initial 2 bytes of the checksum
+		expectedChksum[0] = buf32[2]
+		expectedChksum[1] = buf32[3]
 
-		if _, err = io.ReadFull(lr, checksum[2:]); err != nil {
+		// Read the remaining 2 bytes of the checksum
+		if _, err = io.ReadFull(lr, expectedChksum[2:]); err != nil {
 			return err
 		}
-	}
-	// TODO: use checksum to verify payload
-	_ = hasChecksum
 
-	if hasChecksum {
-		if _, err = io.ReadFull(lr, sizeBuf); err != nil {
+		// Use a tee reader to compute the checksum
+		// of everything consumed after this point
+		lr.R = io.TeeReader(lr.R, &chksum)
+
+		// Fill buffer with metadata size, which is what it
+		// would already contain if there were no magic number / checksum
+		if _, err = io.ReadFull(lr, buf32); err != nil {
 			return err
 		}
 	}
 
 	// Read metadataSize
-	metadataSize := binary.BigEndian.Uint32(sizeBuf)
+	metadataSize := binary.BigEndian.Uint32(buf32)
+	// guard against allocating large buffer
+	if metadataSize > maxFrameSize {
+		return fmt.Errorf("frame metadata size (%d) cannot b greater than max frame size (%d)", metadataSize, maxFrameSize)
+	}
 
 	// Read protobuf encoded metadata
 	metaBuf := make([]byte, metadataSize)
@@ -204,10 +217,18 @@ func (f *Frame) Decode(r io.Reader) error {
 	// Anything left in the frame is considered
 	// the payload and can be any sequence of bytes.
 	if lr.N > 0 {
+		// guard against allocating large buffer
+		if lr.N > maxFrameSize {
+			return fmt.Errorf("frame payload size (%d) cannot be greater than max frame size (%d)", lr.N, maxFrameSize)
+		}
 		f.Payload = make([]byte, lr.N)
 		if _, err = io.ReadFull(lr, f.Payload); err != nil {
 			return err
 		}
+	}
+
+	if computed := chksum.compute(); !bytes.Equal(computed, expectedChksum) {
+		return fmt.Errorf("checksum mismatch: computed (0x%X) does not match given checksum (0x%X)", computed, expectedChksum)
 	}
 
 	return nil
@@ -235,15 +256,14 @@ func (f *Frame) Encode(w io.Writer) error {
 	}
 
 	//
-	// | totalSize (4) | cmdSize (4) | cmd (...) | metadataSize (4) | metadata (...) | payload (...) |
+	// | totalSize (4) | cmdSize (4) | cmd (...) | magic+checksum (6) | metadataSize (4) | metadata (...) | payload (...) |
 	//
 	totalSize := cmdSize + 4
 	if metadataSize > 0 {
-		totalSize += metadataSize + 4 + uint32(len(f.Payload))
+		totalSize += 6 + metadataSize + 4 + uint32(len(f.Payload))
 	}
 
-	frameSize := totalSize + 4
-	if frameSize > maxFrameSize {
+	if frameSize := totalSize + 4; frameSize > maxFrameSize {
 		return fmt.Errorf("encoded frame size (%d bytes) is larger than max allowed frame size (%d bytes)", frameSize, maxFrameSize)
 	}
 
@@ -269,6 +289,30 @@ func (f *Frame) Encode(w io.Writer) error {
 		return nil
 	}
 
+	// write magic number to indicate that a checksum follows
+	buf.Reset(magicNumber[:])
+	if _, err = io.Copy(w, buf); err != nil {
+		return err
+	}
+
+	// build checksum
+	var chksum frameChecksum
+	if err = binary.Write(&chksum, binary.BigEndian, metadataSize); err != nil {
+		return err
+	}
+	if _, err = chksum.Write(encodedMetadata); err != nil {
+		return err
+	}
+	if _, err = chksum.Write(f.Payload); err != nil {
+		return err
+	}
+
+	// write checksum
+	buf.Reset(chksum.compute())
+	if _, err = io.Copy(w, buf); err != nil {
+		return err
+	}
+
 	// write metadataSize
 	if err = binary.Write(w, binary.BigEndian, metadataSize); err != nil {
 		return err
@@ -284,4 +328,32 @@ func (f *Frame) Encode(w io.Writer) error {
 	buf.Reset(f.Payload)
 	_, err = io.Copy(w, buf)
 	return err
+}
+
+// crc32cTbl holds the precomputed crc32 hash table
+// used by Pulsar (crc32c)
+var crc32cTbl = crc32.MakeTable(crc32.Castagnoli)
+
+// frameChecksum handles computing the Frame checksum, both
+// when decoding and encoding. The empty value is valid and
+// represents no checksum. It is not thread-safe.
+type frameChecksum struct {
+	h hash.Hash32
+}
+
+// Write updates the hash with given bytes.
+func (f *frameChecksum) Write(p []byte) (int, error) {
+	if f.h == nil {
+		f.h = crc32.New(crc32cTbl)
+	}
+	return f.h.Write(p)
+}
+
+// compute returns the computed checksum. If nothing
+// was written to the checksum, nil is returned.
+func (f *frameChecksum) compute() []byte {
+	if f.h == nil {
+		return nil
+	}
+	return f.h.Sum(nil)
 }
