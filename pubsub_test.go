@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -57,7 +58,7 @@ func TestPubsub_Subscribe_Success(t *testing.T) {
 	success := api.CommandSuccess{
 		RequestId: proto.Uint64(id),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:    api.BaseCommand_SUCCESS.Enum(),
 			Success: &success,
@@ -116,7 +117,7 @@ func TestPubsub_Subscribe_Error(t *testing.T) {
 		RequestId: proto.Uint64(id),
 		Message:   proto.String("oh noo"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:  api.BaseCommand_ERROR.Enum(),
 			Error: &cmdErr,
@@ -175,7 +176,7 @@ func TestPubsub_Producer_Success(t *testing.T) {
 		LastSequenceId: proto.Int64(-1),
 		ProducerName:   proto.String(prodName),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:            api.BaseCommand_PRODUCER_SUCCESS.Enum(),
 			ProducerSuccess: &success,
@@ -241,7 +242,7 @@ func TestPubsub_Producer_Error(t *testing.T) {
 		RequestId: proto.Uint64(id),
 		Message:   proto.String("oh noo"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:  api.BaseCommand_ERROR.Enum(),
 			Error: &cmdErr,

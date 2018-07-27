@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -31,10 +32,10 @@ func TestConn_Int_Connect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	responses := make(chan Frame)
+	responses := make(chan frame.Frame)
 	readErr := make(chan error, 1)
 	go func() {
-		readErr <- c.read(func(f Frame) {
+		readErr <- c.read(func(f frame.Frame) {
 			responses <- f
 		})
 	}()

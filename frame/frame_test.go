@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pulsar
+package frame
 
 import (
 	"bytes"
@@ -266,7 +266,7 @@ func TestFrameEncode_MaxFrameSize(t *testing.T) {
 			SequenceId:   proto.Uint64(0),
 			PublishTime:  proto.Uint64(1513027321000),
 		},
-		Payload: make([]byte, maxFrameSize), // payload + metadata + baseCmd will be > maxFrameSize
+		Payload: make([]byte, MaxFrameSize), // payload + metadata + baseCmd will be > maxFrameSize
 	}
 
 	var out bytes.Buffer

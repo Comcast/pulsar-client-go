@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/Comcast/pulsar-client-go/pulsartest"
 	"github.com/golang/protobuf/proto"
 )
@@ -237,7 +238,7 @@ func TestManagedProducer_ProducerClosed(t *testing.T) {
 			}
 
 			// This will be sent to the client, closing the Producer.
-			closeProducer := pulsartest.Frame{
+			closeProducer := frame.Frame{
 				BaseCmd: &api.BaseCommand{
 					Type: api.BaseCommand_CLOSE_PRODUCER.Enum(),
 					CloseProducer: &api.CommandCloseProducer{

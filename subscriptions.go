@@ -15,6 +15,8 @@ package pulsar
 
 import (
 	"sync"
+
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 // newSubscriptions returns a ready-to-use subscriptions.
@@ -47,7 +49,7 @@ func (s *subscriptions) delConsumer(c *Consumer) {
 	s.cmu.Unlock()
 }
 
-func (s *subscriptions) handleCloseConsumer(consumerID uint64, f Frame) error {
+func (s *subscriptions) handleCloseConsumer(consumerID uint64, f frame.Frame) error {
 	s.cmu.Lock()
 	defer s.cmu.Unlock()
 
@@ -61,7 +63,7 @@ func (s *subscriptions) handleCloseConsumer(consumerID uint64, f Frame) error {
 	return c.handleCloseConsumer(f)
 }
 
-func (s *subscriptions) handleReachedEndOfTopic(consumerID uint64, f Frame) error {
+func (s *subscriptions) handleReachedEndOfTopic(consumerID uint64, f frame.Frame) error {
 	s.cmu.Lock()
 	defer s.cmu.Unlock()
 
@@ -73,7 +75,7 @@ func (s *subscriptions) handleReachedEndOfTopic(consumerID uint64, f Frame) erro
 	return c.handleReachedEndOfTopic(f)
 }
 
-func (s *subscriptions) handleMessage(consumerID uint64, f Frame) error {
+func (s *subscriptions) handleMessage(consumerID uint64, f frame.Frame) error {
 	s.cmu.RLock()
 	c, ok := s.consumers[consumerID]
 	s.cmu.RUnlock()
@@ -97,7 +99,7 @@ func (s *subscriptions) delProducer(p *Producer) {
 	s.pmu.Unlock()
 }
 
-func (s *subscriptions) handleCloseProducer(producerID uint64, f Frame) error {
+func (s *subscriptions) handleCloseProducer(producerID uint64, f frame.Frame) error {
 	s.pmu.Lock()
 	defer s.pmu.Unlock()
 

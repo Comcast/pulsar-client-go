@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pulsar
+package frame
 
 import (
 	"bytes"
@@ -23,11 +23,11 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// maxFrameSize is defined by the Pulsar spec with a single
+// MaxFrameSize is defined by the Pulsar spec with a single
 // sentence: "The maximum allowable size of a single frame is 5 MB."
 //
 // https://pulsar.incubator.apache.org/docs/latest/project/BinaryProtocol/#Framing-5l6bym
-const maxFrameSize = 5 * 1024 * 1024 // 5mb
+const MaxFrameSize = 5 * 1024 * 1024 // 5mb
 
 // magicNumber is a 2-byte byte array (0x0e01)
 // identifying an optional checksum in the message,
@@ -113,8 +113,8 @@ func (f *Frame) Decode(r io.Reader) error {
 	// is the size of all the _following_ bytes).
 	frameSize := int(totalSize) + 4
 	// ensure reasonable frameSize
-	if frameSize > maxFrameSize {
-		return fmt.Errorf("frame size (%d) cannot be greater than max frame size (%d)", frameSize, maxFrameSize)
+	if frameSize > MaxFrameSize {
+		return fmt.Errorf("frame size (%d) cannot be greater than max frame size (%d)", frameSize, MaxFrameSize)
 	}
 
 	// Wrap our reader so that we can only read
@@ -130,8 +130,8 @@ func (f *Frame) Decode(r io.Reader) error {
 	}
 	cmdSize := binary.BigEndian.Uint32(buf32)
 	// guard against allocating large buffer
-	if cmdSize > maxFrameSize {
-		return fmt.Errorf("frame command size (%d) cannot b greater than max frame size (%d)", cmdSize, maxFrameSize)
+	if cmdSize > MaxFrameSize {
+		return fmt.Errorf("frame command size (%d) cannot b greater than max frame size (%d)", cmdSize, MaxFrameSize)
 	}
 
 	// Read protobuf encoded BaseCommand
@@ -193,8 +193,8 @@ func (f *Frame) Decode(r io.Reader) error {
 	// Read metadataSize
 	metadataSize := binary.BigEndian.Uint32(buf32)
 	// guard against allocating large buffer
-	if metadataSize > maxFrameSize {
-		return fmt.Errorf("frame metadata size (%d) cannot b greater than max frame size (%d)", metadataSize, maxFrameSize)
+	if metadataSize > MaxFrameSize {
+		return fmt.Errorf("frame metadata size (%d) cannot b greater than max frame size (%d)", metadataSize, MaxFrameSize)
 	}
 
 	// Read protobuf encoded metadata
@@ -211,8 +211,8 @@ func (f *Frame) Decode(r io.Reader) error {
 	// the payload and can be any sequence of bytes.
 	if lr.N > 0 {
 		// guard against allocating large buffer
-		if lr.N > maxFrameSize {
-			return fmt.Errorf("frame payload size (%d) cannot be greater than max frame size (%d)", lr.N, maxFrameSize)
+		if lr.N > MaxFrameSize {
+			return fmt.Errorf("frame payload size (%d) cannot be greater than max frame size (%d)", lr.N, MaxFrameSize)
 		}
 		f.Payload = make([]byte, lr.N)
 		if _, err = io.ReadFull(lr, f.Payload); err != nil {
@@ -256,8 +256,8 @@ func (f *Frame) Encode(w io.Writer) error {
 		totalSize += 6 + metadataSize + 4 + uint32(len(f.Payload))
 	}
 
-	if frameSize := totalSize + 4; frameSize > maxFrameSize {
-		return fmt.Errorf("encoded frame size (%d bytes) is larger than max allowed frame size (%d bytes)", frameSize, maxFrameSize)
+	if frameSize := totalSize + 4; frameSize > MaxFrameSize {
+		return fmt.Errorf("encoded frame size (%d bytes) is larger than max allowed frame size (%d bytes)", frameSize, MaxFrameSize)
 	}
 
 	// write totalSize

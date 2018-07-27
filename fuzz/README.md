@@ -1,7 +1,7 @@
 fuzz
 ====
 
-The [`Frame.Decode(r io.Reader)`](../frame.go) method decodes data from a TCP connection and
+The [`Frame.Decode(r io.Reader)`](../frame/frame.go) method decodes data from a TCP connection and
 converts it into a Pulsar frame. Since it accepts traffic from the network, it a good candidate for fuzz testing.
 
 From the `go-fuzz` README:
@@ -9,7 +9,7 @@ From the `go-fuzz` README:
 > and is especially useful for hardening of systems that parse inputs from potentially
 > malicious users (e.g. anything accepted over a network).
 
-The [`frame_fuzz.go`](../frame_fuzz.go) file contains the two entrypoints to the fuzzer.
+The [`frame_fuzz.go`](../frame/frame_fuzz.go) file contains the two entrypoints to the fuzzer.
 
 ## Prerequisites
 

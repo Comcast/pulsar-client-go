@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -48,7 +49,7 @@ func TestConnector(t *testing.T) {
 	connected := api.CommandConnected{
 		ServerVersion: proto.String("this is a test"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:      api.BaseCommand_CONNECTED.Enum(),
 			Connected: &connected,
@@ -115,7 +116,7 @@ func TestConnector_Timeout(t *testing.T) {
 
 	// There should be nothing in the dispatcher,
 	// so `connected` should fail.
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CONNECTED.Enum(),
 			Connected: &api.CommandConnected{
@@ -157,7 +158,7 @@ func TestConnector_Error(t *testing.T) {
 		RequestId: proto.Uint64(undefRequestID),
 		Message:   proto.String("there was an error of sorts"),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:  api.BaseCommand_ERROR.Enum(),
 			Error: &errorMsg,
@@ -183,7 +184,7 @@ func TestConnector_Error(t *testing.T) {
 
 	// There should be nothing in the dispatcher,
 	// so `connected` should fail.
-	f = Frame{
+	f = frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CONNECTED.Enum(),
 			Connected: &api.CommandConnected{

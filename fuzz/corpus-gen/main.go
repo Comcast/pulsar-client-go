@@ -21,7 +21,7 @@ import (
 	"os"
 	"path"
 
-	pulsar "github.com/Comcast/pulsar-client-go"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
@@ -63,7 +63,7 @@ func handlePacket(outputDir string, pkt gopacket.Packet) {
 		return
 	}
 
-	var f pulsar.Frame
+	var f frame.Frame
 	if err := f.Decode(bytes.NewReader(data)); err != nil {
 		fmt.Fprintln(os.Stderr, err, data)
 		return

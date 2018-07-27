@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -71,7 +72,7 @@ func TestConsumer_Close_Success(t *testing.T) {
 	expected := api.CommandSuccess{
 		RequestId: proto.Uint64(id),
 	}
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type:    api.BaseCommand_SUCCESS.Enum(),
 			Success: &expected,
@@ -107,7 +108,7 @@ func TestConsumer_handleMessage(t *testing.T) {
 
 	c := newConsumer(&ms, dispatcher, "test", &reqID, consID, make(chan Message, 1))
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_MESSAGE.Enum(),
 			Message: &api.CommandMessage{
@@ -157,7 +158,7 @@ func TestConsumer_handleMessage_fullQueue(t *testing.T) {
 	queueSize := 3
 	c := newConsumer(&ms, dispatcher, "test", &reqID, consID, make(chan Message, queueSize))
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_MESSAGE.Enum(),
 			Message: &api.CommandMessage{
@@ -228,7 +229,7 @@ func TestConsumer_handleCloseConsumer(t *testing.T) {
 		t.Logf("Closed() blocked")
 	}
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_CLOSE_CONSUMER.Enum(),
 			CloseConsumer: &api.CommandCloseConsumer{
@@ -265,7 +266,7 @@ func TestConsumer_handleReachedEndOfTopic(t *testing.T) {
 		t.Logf("ReachedEndOfTopic() blocked")
 	}
 
-	f := Frame{
+	f := frame.Frame{
 		BaseCmd: &api.BaseCommand{
 			Type: api.BaseCommand_REACHED_END_OF_TOPIC.Enum(),
 			ReachedEndOfTopic: &api.CommandReachedEndOfTopic{
@@ -301,7 +302,7 @@ func TestConsumer_RedeliverOverflow(t *testing.T) {
 		// the MessageIdData must be unique for each message,
 		// otherwise the consumer will consider them duplicates
 		// and not store them in overflow
-		f := Frame{
+		f := frame.Frame{
 			BaseCmd: &api.BaseCommand{
 				Type: api.BaseCommand_MESSAGE.Enum(),
 				Message: &api.CommandMessage{

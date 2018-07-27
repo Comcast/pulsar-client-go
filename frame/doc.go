@@ -11,31 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pulsar
-
-import (
-	"math/rand"
-	"sync"
-	"time"
-)
-
-// ################
-// helper functions
-// ################
-
-var (
-	randStringChars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	randStringMu    = new(sync.Mutex) //protects randStringRand, which isn't threadsafe
-	randStringRand  = rand.New(rand.NewSource(time.Now().UnixNano()))
-)
-
-func randString(n int) string {
-	b := make([]rune, n)
-	l := len(randStringChars)
-	randStringMu.Lock()
-	for i := range b {
-		b[i] = randStringChars[randStringRand.Intn(l)]
-	}
-	randStringMu.Unlock()
-	return string(b)
-}
+// Package frame provides the ability to encode and decode
+// to and from Pulsar's custom binary protocol. The protocol
+// is a light wrapper around protobuf messages.
+package frame

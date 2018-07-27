@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -188,7 +189,7 @@ func (p *Producer) Close(ctx context.Context) error {
 //
 // When receiving the CloseProducer, the client is expected to go through the service discovery lookup again and recreate the producer again. The TCP connection is not being affected.
 // https://pulsar.incubator.apache.org/docs/latest/project/BinaryProtocol/#command-closeproducer
-func (p *Producer) handleCloseProducer(f Frame) error {
+func (p *Producer) handleCloseProducer(f frame.Frame) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

@@ -17,20 +17,21 @@ import (
 	"sync"
 
 	"github.com/Comcast/pulsar-client-go/api"
+	"github.com/Comcast/pulsar-client-go/frame"
 )
 
 // mockSender implements the sender interface
 type mockSender struct {
 	mu      sync.Mutex // protects following
-	frames  []Frame
+	frames  []frame.Frame
 	closedc chan struct{}
 }
 
-func (m *mockSender) getFrames() []Frame {
+func (m *mockSender) getFrames() []frame.Frame {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	cp := make([]Frame, len(m.frames))
+	cp := make([]frame.Frame, len(m.frames))
 	copy(cp, m.frames)
 
 	return cp
@@ -40,7 +41,7 @@ func (m *mockSender) sendSimpleCmd(cmd api.BaseCommand) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.frames = append(m.frames, Frame{
+	m.frames = append(m.frames, frame.Frame{
 		BaseCmd: &cmd,
 	})
 
@@ -51,7 +52,7 @@ func (m *mockSender) sendPayloadCmd(cmd api.BaseCommand, metadata api.MessageMet
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.frames = append(m.frames, Frame{
+	m.frames = append(m.frames, frame.Frame{
 		BaseCmd:  &cmd,
 		Metadata: &metadata,
 		Payload:  payload,
