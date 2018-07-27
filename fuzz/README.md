@@ -60,12 +60,12 @@ will copy over the initial corpus files to specific _workdir_ directories for ea
 
 The fuzzer binary can be created/updated and fuzzing started with the following commands:
 
-    ```shell
-    make fuzz
-    ```
+```shell
+make fuzz
+```
 
-    ```shell
-    make fuzz-reencode
-    ```
+```shell
+make fuzz-reencode
+```
 
 The fuzzer will run indefinitely (and use a lot of CPU). Interesting results will be saved in the `/fuzz/{fuzz,fuzz-reencode}-workdir/crashers` directories.
