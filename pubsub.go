@@ -46,18 +46,19 @@ type pubsub struct {
 
 // subscribe subscribes to the given topic. The queueSize determines the buffer
 // size of the Consumer.Messages() channel.
-func (t *pubsub) subscribe(ctx context.Context, topic, sub string, subType api.CommandSubscribe_SubType, queue chan Message) (*Consumer, error) {
+func (t *pubsub) subscribe(ctx context.Context, topic, sub string, subType api.CommandSubscribe_SubType, initialPosition api.CommandSubscribe_InitialPosition, queue chan Message) (*Consumer, error) {
 	requestID := t.reqID.next()
 	consumerID := t.consumerID.next()
 
 	cmd := api.BaseCommand{
 		Type: api.BaseCommand_SUBSCRIBE.Enum(),
 		Subscribe: &api.CommandSubscribe{
-			SubType:      subType.Enum(),
-			Topic:        proto.String(topic),
-			Subscription: proto.String(sub),
-			RequestId:    requestID,
-			ConsumerId:   consumerID,
+			SubType:         subType.Enum(),
+			Topic:           proto.String(topic),
+			Subscription:    proto.String(sub),
+			RequestId:       requestID,
+			ConsumerId:      consumerID,
+			InitialPosition: initialPosition.Enum(),
 		},
 	}
 

@@ -27,6 +27,7 @@ type ManagedConsumerConfig struct {
 	Topic     string
 	Name      string // subscription name
 	Exclusive bool   // if false, subscription is shared
+	Earliest  bool   // if true, subscription cursor set to beginning
 	QueueSize int    // number of messages to buffer before dropping messages
 
 	NewConsumerTimeout    time.Duration // maximum duration to create Consumer, including topic lookup
@@ -277,7 +278,7 @@ func (m *ManagedConsumer) newConsumer(ctx context.Context) (*Consumer, error) {
 
 	// Create the topic consumer. A non-blank consumer name is required.
 	if m.cfg.Exclusive {
-		return client.NewExclusiveConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.queue)
+		return client.NewExclusiveConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.cfg.Earliest, m.queue)
 	}
 	return client.NewSharedConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.queue)
 }
