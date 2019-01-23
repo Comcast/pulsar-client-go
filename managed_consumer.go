@@ -339,3 +339,74 @@ func (m *ManagedConsumer) manage() {
 		m.set(consumer)
 	}
 }
+
+// RedeliverUnacknowledged sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
+// for all messages that have not been acked.
+func (m *ManagedConsumer) RedeliverUnacknowledged(ctx context.Context) error {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		return consumer.RedeliverUnacknowledged(ctx)
+	}
+}
+
+// RedeliverOverflow sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
+// for all messages that were dropped because of full message buffer. Note that
+// for all subscription types other than `shared`, _all_ unacknowledged messages
+// will be redelivered.
+// https://github.com/apache/incubator-pulsar/issues/2003
+func (m *ManagedConsumer) RedeliverOverflow(ctx context.Context) (int, error) {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return -1, ctx.Err()
+			}
+		}
+		return consumer.RedeliverOverflow(ctx)
+	}
+}
+
+// Unsubscribe the consumer from its topic.
+func (m *ManagedConsumer) Unsubscribe(ctx context.Context) error {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		consumer.Unsubscribe(ctx)
+	}
+}
