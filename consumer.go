@@ -235,8 +235,8 @@ func (c *Consumer) handleReachedEndOfTopic(f frame.Frame) error {
 	return nil
 }
 
-// RedeliverUnacknowledged sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
-// for all messages that have not been acked.
+// RedeliverUnacknowledged uses the protocol option
+// REDELIVER_UNACKNOWLEDGED_MESSAGES to re-retrieve unacked messages.
 func (c *Consumer) RedeliverUnacknowledged(ctx context.Context) error {
 	cmd := api.BaseCommand{
 		Type: api.BaseCommand_REDELIVER_UNACKNOWLEDGED_MESSAGES.Enum(),

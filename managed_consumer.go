@@ -27,6 +27,7 @@ type ManagedConsumerConfig struct {
 	Topic     string
 	Name      string // subscription name
 	Exclusive bool   // if false, subscription is shared
+	Earliest  bool   // if true, subscription cursor set to beginning
 	QueueSize int    // number of messages to buffer before dropping messages
 
 	NewConsumerTimeout    time.Duration // maximum duration to create Consumer, including topic lookup
@@ -277,7 +278,7 @@ func (m *ManagedConsumer) newConsumer(ctx context.Context) (*Consumer, error) {
 
 	// Create the topic consumer. A non-blank consumer name is required.
 	if m.cfg.Exclusive {
-		return client.NewExclusiveConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.queue)
+		return client.NewExclusiveConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.cfg.Earliest, m.queue)
 	}
 	return client.NewSharedConsumer(ctx, m.cfg.Topic, m.cfg.Name, m.queue)
 }
@@ -336,5 +337,76 @@ func (m *ManagedConsumer) manage() {
 		m.unset()
 		consumer = m.reconnect(false)
 		m.set(consumer)
+	}
+}
+
+// RedeliverUnacknowledged sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
+// for all messages that have not been acked.
+func (m *ManagedConsumer) RedeliverUnacknowledged(ctx context.Context) error {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		return consumer.RedeliverUnacknowledged(ctx)
+	}
+}
+
+// RedeliverOverflow sends of REDELIVER_UNACKNOWLEDGED_MESSAGES request
+// for all messages that were dropped because of full message buffer. Note that
+// for all subscription types other than `shared`, _all_ unacknowledged messages
+// will be redelivered.
+// https://github.com/apache/incubator-pulsar/issues/2003
+func (m *ManagedConsumer) RedeliverOverflow(ctx context.Context) (int, error) {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return -1, ctx.Err()
+			}
+		}
+		return consumer.RedeliverOverflow(ctx)
+	}
+}
+
+// Unsubscribe the consumer from its topic.
+func (m *ManagedConsumer) Unsubscribe(ctx context.Context) error {
+	for {
+		m.mu.RLock()
+		consumer := m.consumer
+		wait := m.waitc
+		m.mu.RUnlock()
+
+		if consumer == nil {
+			select {
+			case <-wait:
+				// a new consumer was established.
+				// Re-enter read-lock to obtain it.
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		consumer.Unsubscribe(ctx)
 	}
 }
