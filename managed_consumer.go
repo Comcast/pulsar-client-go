@@ -312,7 +312,7 @@ func (m *ManagedConsumer) reconnect(initial bool) *Consumer {
 	}
 }
 
-// manage monitors the Consumer for conditions
+// manage Monitors the Consumer for conditions
 // that require it to be recreated.
 func (m *ManagedConsumer) manage() {
 	defer m.unset()
@@ -407,6 +407,18 @@ func (m *ManagedConsumer) Unsubscribe(ctx context.Context) error {
 				return ctx.Err()
 			}
 		}
-		consumer.Unsubscribe(ctx)
+		return consumer.Unsubscribe(ctx)
 	}
+}
+
+// Monitor a scoped deferrable lock
+func (m *ManagedConsumer) Monitor() func() {
+	m.mu.Lock()
+	return m.mu.Unlock
+}
+
+// Close consumer
+func (m *ManagedConsumer) Close(ctx context.Context) error {
+	defer m.Monitor()()
+	return m.consumer.Close(ctx)
 }

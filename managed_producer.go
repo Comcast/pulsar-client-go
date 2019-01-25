@@ -177,7 +177,7 @@ func (m *ManagedProducer) reconnect(initial bool) *Producer {
 	}
 }
 
-// managed monitors the Producer for conditions
+// managed Monitors the Producer for conditions
 // that require it to be recreated.
 func (m *ManagedProducer) manage() {
 	defer m.unset()
@@ -195,4 +195,16 @@ func (m *ManagedProducer) manage() {
 		producer = m.reconnect(false)
 		m.set(producer)
 	}
+}
+
+// Monitor a scoped deferrable lock
+func (m *ManagedProducer) Monitor() func() {
+	m.mu.Lock()
+	return m.mu.Unlock
+}
+
+// Close producer
+func (m *ManagedProducer) Close(ctx context.Context) error {
+	defer m.Monitor()()
+	return m.producer.Close(ctx)
 }
