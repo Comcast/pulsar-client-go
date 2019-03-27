@@ -29,7 +29,11 @@ import (
 // newTCPConn creates a conn using a TCPv4 connection to the given
 // (pulsar server) address.
 func newTCPConn(addr string, timeout time.Duration) (*conn, error) {
-	addr = strings.TrimPrefix(addr, "pulsar://")
+	if strings.HasPrefix(addr, "pulsar://") {
+		addr = strings.TrimPrefix(addr, "pulsar://")
+	} else if strings.HasPrefix(addr, "pulsar+ssl://") {
+		addr = strings.TrimPrefix(addr, "pulsar+ssl://")
+	}
 
 	d := net.Dialer{
 		DualStack: false,
@@ -50,7 +54,11 @@ func newTCPConn(addr string, timeout time.Duration) (*conn, error) {
 // newTLSConn creates a conn using a TCPv4+TLS connection to the given
 // (pulsar server) address.
 func newTLSConn(addr string, tlsCfg *tls.Config, timeout time.Duration) (*conn, error) {
-	addr = strings.TrimPrefix(addr, "pulsar://")
+	if strings.HasPrefix(addr, "pulsar://") {
+		addr = strings.TrimPrefix(addr, "pulsar://")
+	} else if strings.HasPrefix(addr, "pulsar+ssl://") {
+		addr = strings.TrimPrefix(addr, "pulsar+ssl://")
+	}
 
 	d := net.Dialer{
 		DualStack: false,
