@@ -12,6 +12,10 @@ certs
 # ignore compiled cli
 cli/cli
 
+# ignore IDE working dirs
+.idea/
+.vscode/
+
 # ignore fuzz artifacts
 fuzz/pulsar-corpus-gen
 fuzz/*.zip
